@@ -6,6 +6,10 @@
 #include <cstring>
 #include <ctime>
 #include <unistd.h>
+#include <iostream>
+#include <arpa/inet.h>
+
+using namespace std;
 
 int main()
 {
