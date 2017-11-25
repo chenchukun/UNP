@@ -1,4 +1,4 @@
-TARGET=person
+TARGET=reflect
 
 COMFLAG=-std=c++11
 LDFLAGS=-lprotobuf -lpthread
@@ -16,9 +16,10 @@ $(OBJECTS): %.o:%.cpp
 $(TARGET): $(OBJECTS)
 	g++ $^ -o $@ $(FLAGS)
 
-protobuf: person.proto
-	protoc --cpp_out=. person.proto
-	mv person.pb.cc person.pb.cpp
+protobuf: SearchRequest.proto SearchResponse.proto
+	protoc --cpp_out=. $^
+	mv SearchRequest.pb.cc SearchRequest.pb.cpp
+	mv SearchResponse.pb.cc SearchResponse.pb.cpp
 
 clean:
-	rm -rf *.o person 
+	rm -rf *.o reflect

@@ -36,11 +36,12 @@ void protobuf_AssignDesc_person_2eproto() {
       "person.proto");
   GOOGLE_CHECK(file != NULL);
   Person_descriptor_ = file->message_type(0);
-  static const int Person_offsets_[4] = {
+  static const int Person_offsets_[5] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Person, name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Person, id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Person, email_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Person, phone_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Person, newelem_),
   };
   Person_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -104,12 +105,12 @@ void protobuf_AddDesc_person_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014person.proto\"\310\001\n\006Person\022\014\n\004name\030\001 \002(\t\022"
+    "\n\014person.proto\"\331\001\n\006Person\022\014\n\004name\030\001 \002(\t\022"
     "\n\n\002id\030\002 \002(\005\022\r\n\005email\030\003 \001(\t\022\"\n\005phone\030\004 \003("
-    "\0132\023.Person.PhoneNumber\032D\n\013PhoneNumber\022\016\n"
-    "\006number\030\001 \002(\t\022%\n\004type\030\002 \001(\0162\021.Person.Pho"
-    "neType:\004HOME\"+\n\tPhoneType\022\n\n\006MOBILE\020\000\022\010\n"
-    "\004HOME\020\001\022\010\n\004WORK\020\002", 217);
+    "\0132\023.Person.PhoneNumber\022\017\n\007newElem\030\005 \003(\005\032"
+    "D\n\013PhoneNumber\022\016\n\006number\030\001 \002(\t\022%\n\004type\030\002"
+    " \001(\0162\021.Person.PhoneType:\004HOME\"+\n\tPhoneTy"
+    "pe\022\n\n\006MOBILE\020\000\022\010\n\004HOME\020\001\022\010\n\004WORK\020\002", 234);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "person.proto", &protobuf_RegisterTypes);
   Person::default_instance_ = new Person();
@@ -428,6 +429,7 @@ const int Person::kNameFieldNumber;
 const int Person::kIdFieldNumber;
 const int Person::kEmailFieldNumber;
 const int Person::kPhoneFieldNumber;
+const int Person::kNewElemFieldNumber;
 #endif  // !_MSC_VER
 
 Person::Person()
@@ -503,6 +505,7 @@ void Person::Clear() {
     }
   }
   phone_.Clear();
+  newelem_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
@@ -573,6 +576,28 @@ bool Person::MergePartialFromCodedStream(
           goto handle_uninterpreted;
         }
         if (input->ExpectTag(34)) goto parse_phone;
+        if (input->ExpectTag(40)) goto parse_newElem;
+        break;
+      }
+
+      // repeated int32 newElem = 5;
+      case 5: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_newElem:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 1, 40, input, this->mutable_newelem())));
+        } else if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag)
+                   == ::google::protobuf::internal::WireFormatLite::
+                      WIRETYPE_LENGTH_DELIMITED) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPackedPrimitiveNoInline<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, this->mutable_newelem())));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(40)) goto parse_newElem;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -624,6 +649,12 @@ void Person::SerializeWithCachedSizes(
       4, this->phone(i), output);
   }
 
+  // repeated int32 newElem = 5;
+  for (int i = 0; i < this->newelem_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(
+      5, this->newelem(i), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -662,6 +693,12 @@ void Person::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         4, this->phone(i), target);
+  }
+
+  // repeated int32 newElem = 5;
+  for (int i = 0; i < this->newelem_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteInt32ToArray(5, this->newelem(i), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -705,6 +742,16 @@ int Person::ByteSize() const {
         this->phone(i));
   }
 
+  // repeated int32 newElem = 5;
+  {
+    int data_size = 0;
+    for (int i = 0; i < this->newelem_size(); i++) {
+      data_size += ::google::protobuf::internal::WireFormatLite::
+        Int32Size(this->newelem(i));
+    }
+    total_size += 1 * this->newelem_size() + data_size;
+  }
+
   if (!unknown_fields().empty()) {
     total_size +=
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
@@ -731,6 +778,7 @@ void Person::MergeFrom(const ::google::protobuf::Message& from) {
 void Person::MergeFrom(const Person& from) {
   GOOGLE_CHECK_NE(&from, this);
   phone_.MergeFrom(from.phone_);
+  newelem_.MergeFrom(from.newelem_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_name()) {
       set_name(from.name());
@@ -772,6 +820,7 @@ void Person::Swap(Person* other) {
     std::swap(id_, other->id_);
     std::swap(email_, other->email_);
     phone_.Swap(&other->phone_);
+    newelem_.Swap(&other->newelem_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

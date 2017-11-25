@@ -17,4 +17,7 @@ message Person {
   }
 
   repeated PhoneNumber phone = 4;
+
+  repeated int32 newElem = 5;
+
 }
