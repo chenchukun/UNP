@@ -1,9 +1,9 @@
 TARGET=reflect
 
-COMFLAG=-std=c++11
+CXXFLAGS=-std=c++11
 LDFLAGS=-lprotobuf -lpthread
 
-FLAGS= $(COMFLAG) $(LDFLAGS)
+FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
 all: $(TARGET)
 
@@ -11,7 +11,7 @@ SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 
 $(OBJECTS): %.o:%.cpp
-	g++ $(COMFLAG) -c $< -o $@
+	g++ $(CXXFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
 	g++ $^ -o $@ $(FLAGS)
@@ -23,3 +23,4 @@ protobuf: SearchRequest.proto SearchResponse.proto
 
 clean:
 	rm -rf *.o reflect
+

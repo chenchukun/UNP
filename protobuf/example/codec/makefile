@@ -1,6 +1,6 @@
-TARGET=person
+TARGET=codecTest
 
-CXXFLAGS=-std=c++11
+CXXFLAGS=-std=c++11 -g
 LDFLAGS=-lprotobuf -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
@@ -16,9 +16,9 @@ $(OBJECTS): %.o:%.cpp
 $(TARGET): $(OBJECTS)
 	g++ $^ -o $@ $(FLAGS)
 
-protobuf: person.proto
-	protoc --cpp_out=. person.proto
-	mv person.pb.cc person.pb.cpp
+protobuf: search.proto
+	protoc --cpp_out=. search.proto
+	mv search.pb.cc search.pb.cpp
 
 clean:
-	rm -rf *.o person 
+	rm -rf *.o codecTest

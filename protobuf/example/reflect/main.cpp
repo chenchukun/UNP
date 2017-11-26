@@ -150,5 +150,6 @@ int main()
     delete message;
     cout << "==========利用反射自定义序列化==========" << endl;
     test();
+    ShutdownProtobufLibrary();
     return 0;
 }
