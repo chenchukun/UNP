@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <netdb.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <cstring>
 using namespace std;
 
 #pragma pack(1)
