@@ -47,7 +47,7 @@ int readline(int fd, void *buff, size_t len)
 {
     size_t nread = len;
     char *ptr = reinterpret_cast<char*>(buff);
-    for (ssize_t i=0; i<len-1; ++i) {
+    for (size_t i=0; i<len-1; ++i) {
         int ret = read(fd, ptr+i, 1);
         if (ret == 1) {
             if (*(ptr + i) == '\n') {
@@ -60,7 +60,7 @@ int readline(int fd, void *buff, size_t len)
             }
         }
         else if (ret == 0) {
-            *(ptr+1) = 0;
+            *(ptr+i) = 0;
             return i;
         }
         else if (errno == EINTR) {
