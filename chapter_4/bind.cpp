@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     }
     socklen_t len = sizeof(addr);
     // 通过getsockname来获得绑定的协议地址
-    // 若要内核选择临时端口号,临时端口号是在bind调用时确定,而IP不在bind是确定
+    // 若要内核选择临时端口号,临时端口号是在bind调用时确定,而IP不在bind时确定
     assert(getsockname(sockfd, reinterpret_cast<sockaddr*>(&addr), &len) == 0);
     char buff[128];
     assert(sock_ntop(&addr, buff, sizeof(buff)) != NULL);

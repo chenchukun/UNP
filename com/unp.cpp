@@ -40,8 +40,59 @@ int sock_bind_wild(int sockfd, int family)
             }
             return ntohs(addr.sin6_port);
         }
+        default:
+            errno = EAFNOSUPPORT;
+            return -1;
     }
     return -1;
+}
+
+int sock_bind(int sockfd, int family, int16_t port, const char *ip)
+{
+    switch (family) {
+        case AF_INET: {
+            sockaddr_in addr;
+            bzero(&addr, sizeof(addr));
+            addr.sin_family = AF_INET;
+            if (ip == NULL) {
+                addr.sin_addr.s_addr = INADDR_ANY;
+            }
+            else {
+                int ret = inet_pton(AF_INET, ip, &addr.sin_addr);
+                if (ret != 1) {
+                    return -1;
+                }
+            }
+            addr.sin_port = htons(port);
+            if (bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
+                return -1;
+            }
+            break;
+        }
+        case AF_INET6: {
+            sockaddr_in6 addr;
+            bzero(&addr, sizeof(addr));
+            addr.sin6_family = AF_INET6;
+            if (ip == NULL) {
+                addr.sin6_addr = IN6ADDR_ANY_INIT;
+            }
+            else {
+                int ret = inet_pton(AF_INET6, ip, &addr.sin6_addr);
+                if (ret != 1) {
+                    return -1;
+                }
+            }
+            addr.sin6_port = htons(port);
+            if (bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
+                return -1;
+            }
+            break;
+        }
+        default:
+            errno = EAFNOSUPPORT;
+            return -1;
+    }
+    return 0;
 }
 
 int sockaddr_set(void *addr, int family, int16_t port, const char *ip)
@@ -115,8 +166,20 @@ const char* sock_ntop(const void *vaddr, char *host, int len)
     return host;
 }
 
-int sock_listen(int family, int port, const string &ip)
+int sock_listen(int family, int backlog, int16_t port, const char *ip)
 {
-
-    return 0;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        close(sockfd);
+        return -1;
+    }
+    if (sock_bind(sockfd, family, port, ip) == -1) {
+        close(sockfd);
+        return -1;
+    }
+    if (listen(sockfd, backlog) == -1) {
+        close(sockfd);
+        return -1;
+    }
+    return sockfd;
 }
