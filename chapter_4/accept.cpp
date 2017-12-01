@@ -13,7 +13,10 @@ int main(int argc, char **argv)
 {
     int backlog = 10;
     int lisfd = sock_listen(AF_INET, backlog, 6180);
-    assert(lisfd >= 0);
+    if (lisfd < 0) {
+        cerr << "创建监听套接字失败:" << strerror(errno) << "(" << errno << ")" << endl;
+        exit(1);
+    }
     while (true) {
         sockaddr_storage cliaddr;
         socklen_t addrlen;

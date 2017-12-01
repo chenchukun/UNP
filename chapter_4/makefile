@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: socket connect bind listen accept fork concurrency
+all: socket connect bind listen accept fork concurrency getname
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -32,5 +32,8 @@ fork: fork.o
 concurrency: concurrency.o
 	g++ $^ -o $@ $(FLAGS)
 
+getname: getname.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o socket connect bind listen accept fork concurrency
+	rm -rf *.o socket connect bind listen accept fork concurrency getname

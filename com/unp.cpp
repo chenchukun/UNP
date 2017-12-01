@@ -47,7 +47,7 @@ int sock_bind_wild(int sockfd, int family)
     return -1;
 }
 
-int sock_bind(int sockfd, int family, int16_t port, const char *ip)
+int sock_bind(int sockfd, int family, uint16_t port, const char *ip)
 {
     switch (family) {
         case AF_INET: {
@@ -95,7 +95,7 @@ int sock_bind(int sockfd, int family, int16_t port, const char *ip)
     return 0;
 }
 
-int sockaddr_set(void *addr, int family, int16_t port, const char *ip)
+int sockaddr_set(void *addr, int family, uint16_t port, const char *ip)
 {
     switch (family) {
         case AF_INET: {
@@ -129,6 +129,34 @@ int sockaddr_set(void *addr, int family, int16_t port, const char *ip)
             break;
         }
         default:
+            errno = EAFNOSUPPORT;
+            return -1;
+    }
+    return 0;
+}
+
+int sock_ntop(const void *vaddr, char *ip, int len, uint16_t &port)
+{
+    const sockaddr *addr = reinterpret_cast<const sockaddr*>(vaddr);
+    switch(addr->sa_family) {
+        case AF_INET: {
+            const sockaddr_in *sockaddrIn = reinterpret_cast<const sockaddr_in *>(addr);
+            if (inet_ntop(AF_INET, &sockaddrIn->sin_addr, ip, len) == NULL) {
+                return -1;
+            }
+            port = ntohs(sockaddrIn->sin_port);
+            break;
+        }
+        case AF_INET6: {
+            const sockaddr_in6 *sockaddrIn6 = reinterpret_cast<const sockaddr_in6 *>(addr);
+            if (inet_ntop(AF_INET6, &sockaddrIn6->sin6_addr, ip, len) == NULL) {
+                return -1;
+            }
+            port = ntohs(sockaddrIn6->sin6_port);
+            break;
+        }
+        default:
+            errno = EAFNOSUPPORT;
             return -1;
     }
     return 0;
@@ -136,37 +164,39 @@ int sockaddr_set(void *addr, int family, int16_t port, const char *ip)
 
 const char* sock_ntop(const void *vaddr, char *host, int len)
 {
-    const sockaddr *addr = reinterpret_cast<const sockaddr*>(vaddr);
-    switch(addr->sa_family) {
-        case AF_INET: {
-            const sockaddr_in *sockaddrIn = reinterpret_cast<const sockaddr_in *>(addr);
-            if (inet_ntop(AF_INET, &sockaddrIn->sin_addr, host, len) == NULL) {
-                return NULL;
-            }
-            uint16_t port = ntohs(sockaddrIn->sin_port);
-            if (port != 0) {
-                sprintf(host + strlen(host), ":%d", port);
-            }
-            break;
-        }
-        case AF_INET6: {
-            const sockaddr_in6 *sockaddrIn6 = reinterpret_cast<const sockaddr_in6 *>(addr);
-            if (inet_ntop(AF_INET6, &sockaddrIn6->sin6_addr, host, len) == NULL) {
-                return NULL;
-            }
-            uint16_t port = ntohs(sockaddrIn6->sin6_port);
-            if (port != 0) {
-                sprintf(host + strlen(host), ":%d", port);
-            }
-            break;
-        }
-        default:
-            return NULL;
+    uint16_t port;
+    if (sock_ntop(vaddr, host, len, port) != 0) {
+        return NULL;
     }
+    if (port == 0) {
+        return host;
+    }
+    strcat(host, ":");
+    strcat(host, to_string(port).c_str());
     return host;
 }
 
-int sock_listen(int family, int backlog, int16_t port, const char *ip)
+const char* sock_ntop(const void *vaddr, std::string &host)
+{
+    char buff[128];
+    if (sock_ntop(vaddr, buff, sizeof(buff)) == NULL) {
+        return NULL;
+    }
+    host = buff;
+    return host.c_str();
+}
+
+int sock_ntop(const void *vaddr, std::string &ip, uint16_t &port)
+{
+    char buff[128];
+    if (sock_ntop(vaddr, buff, sizeof(buff), port) != 0) {
+        return -1;
+    }
+    ip = buff;
+    return 0;
+}
+
+int sock_listen(int family, int backlog, uint16_t port, const char *ip)
 {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -183,3 +213,14 @@ int sock_listen(int family, int backlog, int16_t port, const char *ip)
     }
     return sockfd;
 }
+
+int sockfd_to_family(int sockfd)
+{
+    sockaddr_storage addr;
+    socklen_t len = sizeof(addr);
+    if (getsockname(sockfd, reinterpret_cast<sockaddr*>(&addr), &len) != 0) {
+        return -1;
+    }
+    return addr.ss_family;
+}
+
