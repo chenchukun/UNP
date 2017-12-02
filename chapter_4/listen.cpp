@@ -7,6 +7,9 @@
 #include <memory>
 #include <assert.h>
 #include <vector>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include <thread>
 #include "unp.h"
 using namespace std;

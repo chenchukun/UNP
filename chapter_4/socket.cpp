@@ -3,6 +3,9 @@
 //
 
 #include <sys/socket.h>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include <iostream>
 using namespace std;
 

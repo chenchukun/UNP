@@ -6,6 +6,9 @@
 #include <iostream>
 #include <memory>
 #include <assert.h>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include "unp.h"
 using namespace std;
 
@@ -32,6 +35,7 @@ int main(int argc, char **argv)
     }
     // 连接TCP服务器,将发起三次握手,成功返回0,失败返回-1
     // 在尝试建立连接失败后,套接字描述符不可再使用,必须关闭,若需要重试,必须新建套接字描述符
+    // connect被信号中断返回EINTER后,不能再次调用connect,否则会发送错误,可以使用select来实现等待连接
     int ret = connect(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
     if (ret == 0) {
         cout << "连接TCP服务器" << buff << "成功" << endl;

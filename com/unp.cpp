@@ -2,6 +2,13 @@
 // Created by chenchukun on 17/11/27.
 //
 #include "unp.h"
+#include <signal.h>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <errno.h>
 using namespace std;
 
 // 将统配地址和一个临时端口绑定到一个套接字上
@@ -198,7 +205,7 @@ int sock_ntop(const void *vaddr, std::string &ip, uint16_t &port)
 
 int sock_listen(int family, int backlog, uint16_t port, const char *ip)
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(family, SOCK_STREAM, 0);
     if (sockfd < 0) {
         close(sockfd);
         return -1;
@@ -224,3 +231,44 @@ int sockfd_to_family(int sockfd)
     return addr.ss_family;
 }
 
+int sock_connect(int family, uint16_t port, const char *ip)
+{
+    int connfd = socket(family, SOCK_STREAM, 0);
+    if (connfd < 0) {
+        return -1;
+    }
+    sockaddr_storage addr;
+    if (sockaddr_set(&addr, family, port, ip) != 0) {
+        close(connfd);
+        return -1;
+    }
+    // MAC不加这个会报错?
+    socklen_t len = family==AF_INET?sizeof(sockaddr_in):sizeof(sockaddr_in6);
+    if (connect(connfd, reinterpret_cast<sockaddr*>(&addr), len) != 0) {
+        close(connfd);
+        return -1;
+    }
+    return connfd;
+}
+
+SigFunc* signal_action(int signo, SigFunc *func)
+{
+    struct sigaction act, oact;
+    act.sa_handler = func;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    if (signo == SIGALRM) {
+#ifdef SA_INTERRUPT
+        act.sa_flags |= SA_INTERRUPT;
+#endif
+    }
+    else {
+#ifdef SA_RESTART
+        act.sa_flags |= SA_RESTART;
+#endif
+    }
+    if (sigaction(signo, &act, &oact) < 0) {
+        return SIG_ERR;
+    }
+    return oact.sa_handler;
+}

@@ -6,6 +6,9 @@
 #include <iostream>
 #include <memory>
 #include <assert.h>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include "unp.h"
 using namespace std;
 
@@ -31,8 +34,17 @@ int main(int argc, char **argv)
             cout << "接收到连接, " << sock_ntop(&cliaddr, buff, sizeof(buff)) << " sockfd = " << sockfd << endl;
             close(sockfd);
         }
-        else {
-            cout << "接收连接失败: " << strerror(errno) << endl;
+        else if (errno == EINVAL) {
+            cerr << "接收连接失败,不是监听套接字:" << strerror(errno) << endl;
+            break;
+        }
+        // 被信号中断时errno为EINTR,三次握手完成后,套接字进入已连接队列排队,此时客户端发送RST会产生ECONNABORTED错误
+        else if (errno == EINTR || errno == ECONNABORTED) {
+            continue;
+        }
+        else {  // 其他致命错误
+            cerr << "接收连接失败: " << strerror(errno) << endl;
+            break;
         }
     }
     return 0;

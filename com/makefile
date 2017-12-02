@@ -1,3 +1,4 @@
+CC=g++
 TARGET=libutility
 
 CXXFLAGS=-std=c++11 -g
@@ -11,7 +12,7 @@ SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 
 $(OBJECTS): %.o:%.cpp
-	g++ $(CXXFLAGS) -c $< -o $@
+	$(CC) $(CXXFLAGS) -c $< -o $@
 
 $(TARGET).a: $(OBJECTS)
 	ar -rc $@ $^

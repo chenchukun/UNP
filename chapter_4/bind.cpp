@@ -6,6 +6,9 @@
 #include <iostream>
 #include <memory>
 #include <assert.h>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include "unp.h"
 using namespace std;
 

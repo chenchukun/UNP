@@ -7,6 +7,9 @@
 #include <memory>
 #include <assert.h>
 #include <ctime>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
 #include<sys/wait.h>
 #include "unp.h"
 #include "utility.h"
