@@ -13,29 +13,18 @@
         exit(-1); \
     }
 
-
-/*
- * 读取n个字符,成功返回读取字符数,失败返回-1
- */
-int readn(int fd, void *buff, size_t len);
-
-/*
- * 写n个字符,成功返回写入字符数,失败返回-1
- */
-int writen(int fd, const void *buff, size_t len);
-
 /*
  * 去除字符串首尾的空白字符
  */
-std::string& strTrim(std::string &str);
+std::string& StrTrim(std::string &str);
 
 /*
  * 分割字符串
  */
-std::vector<std::string> strSplit(const std::string &str, const std::string &sep);
+std::vector<std::string> StrSplit(const std::string &str, const std::string &sep);
 
 template<typename It>
-std::string vectorToStr(It first, It last)
+std::string VectorToStr(It first, It last)
 {
     if (first == last) {
         return "[]";
@@ -53,5 +42,6 @@ std::string vectorToStr(It first, It last)
     return result;
 }
 
+void Sleep(long usec);
 
 #endif //UNP_LIBARY_H

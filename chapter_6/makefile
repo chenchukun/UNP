@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: echo io
+all: select
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -11,11 +11,8 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	g++ $(CXXFLAGS) -c $< -o $@
 
-echo: echo.o
-	g++ $^ -o $@ $(FLAGS)
-
-io: io.o
+select: select.o
 	g++ $^ -o $@ $(FLAGS)
 
 clean:
-	rm -rf *.o echo io
+	rm -rf *.o select

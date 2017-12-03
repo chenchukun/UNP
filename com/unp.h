@@ -11,6 +11,18 @@
 #define family_to_name(family) ((family)==AF_INET?"AF_INET": (family)==AF_INET6?"AF_INET6":"UNKNOWN")
 
 /*
+ * 读取n个字符,成功返回读取字符数,失败返回-1
+ */
+int readn(int fd, void *buff, size_t len);
+
+/*
+ * 写n个字符,成功返回写入字符数,失败返回-1
+ */
+int writen(int fd, const void *buff, size_t len);
+
+int readline(int fd, void *buff, size_t len);
+
+/*
  * 将统配地址和一个临时端口绑定到一个套接字上
  * 成功返回端口号,失败返回-1
  */
