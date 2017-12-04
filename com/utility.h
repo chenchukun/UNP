@@ -13,6 +13,8 @@
         exit(-1); \
     }
 
+void PrintStdError(const std::string &msg);
+
 /*
  * 去除字符串首尾的空白字符
  */

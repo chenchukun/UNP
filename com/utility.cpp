@@ -11,6 +11,12 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <sys/time.h>
+#include <iostream>
+
+void PrintStdError(const std::string &msg)
+{
+    std::cerr << msg << ":" << strerror(errno) << "(" << errno << ")" << std::endl;
+}
 
 std::string& StrTrim(std::string &str)
 {
@@ -55,7 +61,7 @@ void Sleep(long usec)
     while (true) {
         gettimeofday(&stv, NULL);
         int ret = select(0, NULL, NULL, NULL, &tv);
-        if (ret == -1 && errno == EINTR) {
+        if (ret == -1) {
             gettimeofday(&etv, NULL);
             long pass = (etv.tv_sec*1000000 + etv.tv_usec) - (stv.tv_sec*1000000 + stv.tv_usec);
             usec = usec - pass;
