@@ -1,5 +1,5 @@
 CXXFLAGS=-std=c++11 -g -I../com
-LDFLAGS=../com/libutility.a -lpthread
+LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 

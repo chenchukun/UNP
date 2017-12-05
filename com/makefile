@@ -1,12 +1,11 @@
 CC=g++
-TARGET=libutility
 
 CXXFLAGS=-std=c++11 -g
 LDFLAGS=-lprotobuf -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: $(TARGET).a
+all: libutility.a libnet.a
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -14,7 +13,10 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	$(CC) $(CXXFLAGS) -c $< -o $@
 
-$(TARGET).a: $(OBJECTS)
+libutility.a: utility.o
+	ar -rc $@ $^
+
+libnet.a: sock.o
 	ar -rc $@ $^
 
 clean:

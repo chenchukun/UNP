@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <cstring>
-#include "unp.h"
+#include "sock.h"
 #include <signal.h>
 #include <sys/wait.h>
 #include "utility.h"
@@ -37,7 +37,7 @@ int parseCommandLine(int argc, char **argv, Option &option)
     while ((opt = getopt(argc, argv, "b:cs")) != -1) {
         switch(opt) {
             case 'b': {
-                vector <string> host = strSplit(optarg, ":");
+                vector <string> host = StrSplit(optarg, ":");
                 option.ip = host[0];
                 option.port = host.size()>1? stoi(host[1]): 0;
                 break;

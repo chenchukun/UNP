@@ -57,18 +57,8 @@ void Sleep(long usec)
     timeval tv;
     tv.tv_sec = usec / 1000000;
     tv.tv_usec = usec % 1000000;
-    timeval stv, etv;
-    while (true) {
-        gettimeofday(&stv, NULL);
-        int ret = select(0, NULL, NULL, NULL, &tv);
-        if (ret == -1) {
-            gettimeofday(&etv, NULL);
-            long pass = (etv.tv_sec*1000000 + etv.tv_usec) - (stv.tv_sec*1000000 + stv.tv_usec);
-            usec = usec - pass;
-            tv.tv_sec = usec / 1000000;
-            tv.tv_usec = usec % 1000000;
-            continue;
-        }
-        break;
-    }
+    int ret;
+    do {
+        ret = select(0, NULL, NULL, NULL, &tv);
+    } while (ret == -1 && errno == EINTR);
 }

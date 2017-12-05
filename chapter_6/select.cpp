@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <cstring>
 #include <thread>
-#include "unp.h"
+#include "sock.h"
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/select.h>
@@ -52,6 +52,9 @@ void readReady()
             ++it;
         }
         maxfd = *(--fdset.end());
+        // 有些linux版本,select会修改timeout参数,因此每次调用前必须初始化
+        // select返回后,会清楚未就绪的描述符对应的位置,设置就绪的描述符,
+        // 每次调用select前都必须初始化感兴趣的描述符集
         int ret = select(maxfd + 1, &rset, &wset, &eset, &tv);
         if (ret == 0) {
             cout << "当前在线用户数:" << fdset.size() - 1 << endl;
@@ -60,6 +63,7 @@ void readReady()
             continue;
         }
         // 套接字可读的4个条件
+        // 当某个套接字上发生错误时,它将由select标记为即可读,又可写
         for (int fd=0; fd<=maxfd && ret>0; ++fd) {
             if (FD_ISSET(fd, &rset)) {
                 // 1、当监听套接字有已完成的连接时,套接字可读
