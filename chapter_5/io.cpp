@@ -50,8 +50,9 @@ int main()
 #endif
 #ifdef TEST_READ
         cout << "1" << endl;
+        // 关闭写,称为半关闭,缓冲区中的数据将被发送,后发送FIN,不可再调用写函数
 //        shutdown(connfd, SHUT_WR);
-        // 关闭读,不发送FIN
+        // 关闭读,不发送FIN,表示不再接受数据,且在缓冲区中的数据会被丢弃
 //        shutdown(connfd, SHUT_RD);
         close(connfd);
         cout << "1" << endl;
