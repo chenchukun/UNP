@@ -60,33 +60,6 @@ void help() {
     exit(1);
 }
 
-void echo(int connfd, const string &host)
-{
-    ssize_t n;
-    char buff[1024];
-    while (true) {
-        // 客户端正常关闭连接时返回0
-        n = read(connfd, buff, sizeof(buff));
-        if (n == 0) {
-            cout << host << "客户端关闭连接" << endl;
-            break;
-        }
-        if (n > 0) {
-            if (writen(connfd, buff, n) != n) {
-                cerr << "发送数据错误:" << strerror(errno) << "(" << errno << ")" << endl;
-                break;
-            }
-            continue;
-        }
-        if (errno == EINTR) {
-            continue;
-        }
-        cerr << "echo: 读取数据失败:" << strerror(errno) << "(" << errno << ")" << endl;
-        break;
-    }
-    close(connfd);
-}
-
 void sigChld(int signo)
 {
     pid_t pid;
@@ -109,39 +82,75 @@ void echoSrv(const char *ip, uint16_t port)
         cerr << "设置SIGCHLD信号处理函数失败:" << strerror(errno) << "(" << errno << ")" << endl;
     }
     cout << "echo服务启动:" << ip << ":" << port << endl;
-    sockaddr_in cliaddr;
+    sockaddr_storage cliaddr;
     socklen_t clilen;
     string host;
+    fd_set allset, rset;
+    FD_ZERO(&allset);
+    FD_SET(lisfd, &allset);
+    int maxfd = lisfd;
+    char buff[4096];
     while (true) {
-        clilen = sizeof(cliaddr);
-        int connfd = accept(lisfd, reinterpret_cast<sockaddr*>(&cliaddr), &clilen);
-        if (connfd < 0) {
-            // 非致命错误:处理信号中断 和 ECONNABORTED
-            if (errno == EINTR || errno == ECONNABORTED) {
+        rset = allset;
+        int nready = select(maxfd+1, &rset, NULL, NULL, NULL);
+        if (nready == -1) {
+            if (errno == EINTR) {
                 continue;
             }
-            // 致命错误
-            cerr << "接收连接失败:" << strerror(errno) << "(" << errno << ")" << endl;
+            PrintStdError("select发送错误");
             break;
         }
-        if (sock_ntop(&cliaddr, host) == NULL) {
-            cerr << "获取客户端地址失败:" << strerror(errno) << "(" << errno << ")" << endl;
-            close(connfd);
-            continue;
+        if (FD_ISSET(lisfd, &rset)) {
+            int connfd = accept(lisfd, reinterpret_cast<sockaddr*>(&cliaddr), &clilen);
+            if (connfd < 0) {
+                // // 致命错误
+                if (errno != EINTR && errno != ECONNABORTED) {
+                    PrintStdError("接收连接失败");
+                    errno = 0;
+                }
+            }
+            // 为什么首次连接总是会获取地址失败?
+            else if (sock_ntop(&cliaddr, host) == NULL) {
+                PrintStdError("获取客户端地址失败");
+                close(connfd);
+                errno = 0;
+            }
+            else {
+                cout << host << "上线" << endl;
+                // 添加到描述符集合中
+                FD_SET(connfd, &allset);
+                if (connfd > maxfd) {
+                    maxfd = connfd;
+                }
+            }
+            --nready;
         }
-        cout << host << "上线" << endl;
-        pid_t pid = fork();
-        if (pid == -1) {
-            cerr << "创建子进程失败:""接收连接失败:" << strerror(errno) << "(" << errno << ")" << endl;
-            close(connfd);
-            continue;
+        // 遍历所有感兴趣的描述符
+        for (int i=0; i<maxfd+1 && nready>0; ++i) {
+            if (!FD_ISSET(i, &allset)) {
+                continue;
+            }
+            if (FD_ISSET(i, &rset)) {
+                --nready;
+                int n = read(i, buff, sizeof(buff));
+                if (n == 0) {
+                    cout << "客户端关闭连接" << endl;
+                }
+                else if (n > 0) {
+                    if (writen(i, buff, n) == n) {
+                        continue;
+                    }
+                    PrintStdError("发送数据错误");
+                    errno = 0;
+                }
+                else {
+                    PrintStdError("读取数据失败");
+                    errno = 0;
+                }
+                FD_CLR(i, &allset);
+                close(i);
+            }
         }
-        if (pid == 0) {
-            close(lisfd);
-            echo(connfd, host);
-            exit(0);
-        }
-        close(connfd);
     }
     close(lisfd);
 }
