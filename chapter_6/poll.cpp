@@ -36,6 +36,8 @@ int main()
     fd.fd = listenfd;
     fd.events = POLL_IN;
     while (true) {
+        // 错误返回-1,定时器到期返回0,否则返回就绪描述符个数。
+        // timeout单位为毫秒,负数表示永远阻塞,0表示不阻塞立即返回
         int nready = poll(&fds[0], fds.size(), -1);
         if (nready == -1) {
             if (errno == EINTR) {
@@ -45,7 +47,6 @@ int main()
             break;
         }
         if (fds[0].revents & POLL_IN) {
-            fds[0].revents = 0;
             int connfd = accept(fds[0].fd, NULL, NULL);
             if (connfd >= 0) {
                 if (!idle.empty()) {
@@ -72,9 +73,8 @@ int main()
                 continue;
             }
             pollfd &fd = fds[i];
-            --nready;
             if (fd.revents & POLL_IN) {
-                fd.revents = 0;
+                --nready;
                 int n = read(fd.fd, buff, sizeof(buff));
                 if (n == 0) {
                     cout << "客户端下线" << endl;
