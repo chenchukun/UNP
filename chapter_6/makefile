@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: select echo poll
+all: select echo poll epoll
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -20,5 +20,8 @@ echo: echo.o
 poll: poll.o
 	g++ $^ -o $@ $(FLAGS)
 
+epoll: epoll.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o select echo poll
+	rm -rf *.o select echo poll epoll
