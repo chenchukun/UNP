@@ -281,6 +281,11 @@ int sock_ntop(const void *vaddr, std::string &ip, uint16_t &port)
 int sock_listen(int family, int backlog, uint16_t port, const char *ip)
 {
     int sockfd = socket(family, SOCK_STREAM, 0);
+    return sock_listen(sockfd, family, backlog, port, ip);
+}
+
+int sock_listen(int sockfd, int family, int backlog, uint16_t port, const char *ip)
+{
     if (sockfd < 0) {
         close(sockfd);
         return -1;
