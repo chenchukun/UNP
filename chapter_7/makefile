@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: sockopt buf_opt
+all: sockopt buf_opt reuse
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -17,5 +17,8 @@ sockopt: sockopt.o
 buf_opt: buf_opt.o
 	g++ $^ -o $@ $(FLAGS)
 
+reuse: reuse.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o sockopt buf_opt
+	rm -rf *.o sockopt buf_opt reuse
