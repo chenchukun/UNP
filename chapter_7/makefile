@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: sockopt buf_opt reuse nodelay
+all: sockopt buf_opt reuse nodelay fcntl
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -23,5 +23,8 @@ reuse: reuse.o
 nodelay: nodelay.o
 	g++ $^ -o $@ $(FLAGS)
 
+fcntl: fcntl.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o sockopt buf_opt reuse nodelay
+	rm -rf *.o sockopt buf_opt reuse nodelay fcntl
