@@ -12,6 +12,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
     // 通过主机名获取IP地址,成功返回hostent指针,失败返回NULL,并设置h_errno
+    // 仅支持IPv4
     struct hostent *hptr = gethostbyname(argv[1]);
     if (hptr == NULL) {
         cout << "gethostbyname: " << hstrerror(h_errno) << endl;

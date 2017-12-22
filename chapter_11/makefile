@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: gethostbyname gethostbyaddr
+all: gethostbyname gethostbyaddr getserv getaddrinfo
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -17,5 +17,11 @@ gethostbyname: gethostbyname.o
 gethostbyaddr: gethostbyaddr.o
 	g++ $^ -o $@ $(FLAGS)
 
+getserv: getserv.o
+	g++ $^ -o $@ $(FLAGS)
+
+getaddrinfo: getaddrinfo.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o gethostbyname gethostbyaddr
+	rm -rf *.o gethostbyname gethostbyaddr getserv getaddrinfo
