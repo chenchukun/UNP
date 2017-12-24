@@ -352,3 +352,76 @@ SigFunc* signal_action(int signo, SigFunc *func)
     }
     return oact.sa_handler;
 }
+
+struct addrinfo* host_serv(const char *hostname, const char *service, int family, int socktype, int flags)
+{
+    struct addrinfo *result;
+    struct addrinfo hints;
+    bzero(&hints, sizeof(hints));
+    hints.ai_flags = flags;
+    hints.ai_family = family;
+    hints.ai_socktype = socktype;
+    int ret = getaddrinfo(hostname, service, &hints, &result);
+    if (ret != 0) {
+        errno = ret;
+        return NULL;
+    }
+    return result;
+}
+
+int tcp_connect(const char *hostname, const char *service)
+{
+    struct addrinfo *result;
+    result = host_serv(hostname, service, AF_UNSPEC, SOCK_STREAM);
+    if (result == NULL) {
+        return -1;
+    }
+    struct addrinfo *ptr = result;
+    int sockfd;
+    while (ptr != NULL) {
+        sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+        if (sockfd >= 0) {
+            if (connect(sockfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
+                break;
+            }
+            close(sockfd);
+        }
+        ptr = ptr->ai_next;
+    }
+    if (ptr == NULL) {
+        return -1;
+    }
+    return sockfd;
+}
+
+int tcp_listen(const char *hostname, const char *service, int backlog, socklen_t *addrlenp)
+{
+    struct addrinfo *result;
+    result = host_serv(hostname, service, AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
+    if (result == NULL) {
+        return -1;
+    }
+    struct addrinfo *ptr = result;
+    int listenfd;
+    while (ptr != NULL) {
+        listenfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+        if (listenfd >= 0) {
+            int on = 1;
+            setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+            if (bind(listenfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
+                if (listen(listenfd, backlog) == 0) {
+                    break;
+                }
+            }
+            close(listenfd);
+        }
+        ptr = ptr->ai_next;
+    }
+    if (ptr == NULL) {
+        return -1;
+    }
+    if (addrlenp != NULL) {
+        *addrlenp = ptr->ai_addrlen;
+    }
+    return listenfd;
+}

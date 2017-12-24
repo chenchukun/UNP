@@ -6,9 +6,12 @@
 #define MAIN_UNP_H
 
 #include <netinet/in.h>
+#include <netdb.h>
 #include <string>
 
-#define family_to_name(family) ((family)==AF_INET?"AF_INET": (family)==AF_INET6?"AF_INET6":"UNKNOWN")
+#define family_to_name(family) ((family)==AF_INET?"AF_INET": (family)==AF_INET6?"AF_INET6":"OTHER")
+
+#define socktype_to_name(socktype) ((socktype)==SOCK_STREAM?"SOCK_STREAM": (socktype)==SOCK_DGRAM?"SOCK_DGRAM":"OTHER")
 
 /*
  * 读取n个字符,成功返回读取字符数,失败返回-1
@@ -78,5 +81,14 @@ int sockfd_to_family(int sockfd);
 typedef void SigFunc(int);
 
 SigFunc* signal_action(int signo, SigFunc *func);
+
+/*
+ * 简化版getaddrinfo
+ */
+struct addrinfo* host_serv(const char *hostname, const char *service, int family=0, int socktype=0, int flags=0);
+
+int tcp_connect(const char *hostname, const char *service);
+
+int tcp_listen(const char *hostname, const char *service, int backlog=10, socklen_t *addrlenp=NULL);
 
 #endif //MAIN_UNP_H
