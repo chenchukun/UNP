@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <sys/time.h>
 using namespace std;
 
 int readn(int fd, void *buff, size_t len)
@@ -424,4 +425,18 @@ int tcp_listen(const char *hostname, const char *service, int backlog, socklen_t
         *addrlenp = ptr->ai_addrlen;
     }
     return listenfd;
+}
+
+int readable_time(int fd, int sec) {
+    fd_set rset;
+    FD_ZERO(&rset);
+    FD_SET(fd, &rset);
+    struct timeval tv;
+    tv.tv_sec = sec;
+    tv.tv_usec = 0;
+    int ret;
+    do {
+        ret = select(fd+1, &rset, NULL, NULL, &tv);
+    } while (ret == -1 && errno == EINTR);
+    return ret;
 }

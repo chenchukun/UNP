@@ -26,15 +26,18 @@ enum Type{ECHO_CLIENT, ECHO_SERVICE};
 
 struct Option
 {
+    Option() : daemon(false) {
+    }
     string ip;
     uint16_t port;
     Type type;
+    bool daemon;
 };
 
 int parseCommandLine(int argc, char **argv, Option &option)
 {
     int opt;
-    while ((opt = getopt(argc, argv, "b:cs")) != -1) {
+    while ((opt = getopt(argc, argv, "b:csd")) != -1) {
         switch(opt) {
             case 'b': {
                 vector <string> host = StrSplit(optarg, ":");
@@ -47,6 +50,9 @@ int parseCommandLine(int argc, char **argv, Option &option)
                 break;
             case 's':
                 option.type = ECHO_SERVICE;
+                break;
+            case 'd':
+                option.daemon = true;
                 break;
             default:
                 return -1;
@@ -228,6 +234,11 @@ int main(int argc, char **argv)
     // 忽略SIGPIPE信号,在写一个已接收到RST的套接字时会产生该信号,默认为终止进程
     signal_action(SIGPIPE, SIG_IGN);
     if (option.type == ECHO_SERVICE) {
+        if (option.daemon) {
+            // nochdir为0表示更改当前目录为/
+            // noclose为0表示重定向标准输出和错误到/dev/null
+            daemon(0, 0);
+        }
         echoSrv(option.ip.c_str(), option.port);
     }
     else {

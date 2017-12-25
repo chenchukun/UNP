@@ -91,4 +91,6 @@ int tcp_connect(const char *hostname, const char *service);
 
 int tcp_listen(const char *hostname, const char *service, int backlog=10, socklen_t *addrlenp=NULL);
 
+int readable_time(int fd, int sec);
+
 #endif //MAIN_UNP_H
