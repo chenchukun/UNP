@@ -93,4 +93,6 @@ int tcp_listen(const char *hostname, const char *service, int backlog=10, sockle
 
 int readable_time(int fd, int sec);
 
+int set_nonblock(int connfd, bool op);
+
 #endif //MAIN_UNP_H

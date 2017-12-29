@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/time.h>
 using namespace std;
 
@@ -439,4 +440,19 @@ int readable_time(int fd, int sec) {
         ret = select(fd+1, &rset, NULL, NULL, &tv);
     } while (ret == -1 && errno == EINTR);
     return ret;
+}
+
+int set_nonblock(int connfd, bool op)
+{
+    int flags = fcntl(connfd, F_GETFL, 0);
+    if (flags == -1) {
+        return -1;
+    }
+    if (op) {
+        flags |= O_NONBLOCK;
+    }
+    else {
+        flags &= ~O_NONBLOCK;
+    }
+    return fcntl(connfd, F_SETFL, flags);
 }
