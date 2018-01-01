@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: uio
+all: testBuff
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -11,9 +11,9 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	g++ $(CXXFLAGS) -c $< -o $@
 
-uio: uio.o
+testBuff: testBuff.o
 	g++ $^ -o $@ $(FLAGS)
 
 
 clean:
-	rm -rf *.o uio
+	rm -rf *.o testBuff
