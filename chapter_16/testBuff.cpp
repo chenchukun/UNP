@@ -41,11 +41,11 @@ void testWrite(SimpleBuffer &buffer) {
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
     SimpleBuffer buffer;
     srand(time(NULL));
-    for (int i=0; i<10000000; ++i) {
+    for (int i=0; i<stoi(argv[1]); ++i) {
         int type = rand() % 9;
  //       cout << "type = " << type << endl;
         switch (type) {

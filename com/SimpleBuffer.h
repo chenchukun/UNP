@@ -85,6 +85,7 @@ public:
         buffer_ = newBuf;
         writePos_ = readSize();
         readPos_ = 0;
+        capacity_ = size;
     }
 
 private:
