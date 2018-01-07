@@ -92,7 +92,7 @@ void sigChld(int signo)
     pid_t pid;
     int stat;
     // -1表示等待第一个终止的子进程
-    // WNOHANG表示在没有已终止进程是不阻塞
+    // WNOHANG表示在没有已终止进程时不阻塞
     while ((pid = waitpid(-1, &stat, WNOHANG)) > 0);
 }
 
