@@ -33,8 +33,7 @@ struct Context
     }
 
     int fd;
-    SimpleBuffer readBuff;
-    SimpleBuffer writeBuff;
+    SimpleBuffer buffer;
     int status; // 0正常, 1 读关闭,
 };
 
@@ -129,17 +128,16 @@ void start(const char *hostname, const char *service)
                 }
             }
             else {
-                SimpleBuffer &readBuff = context->readBuff;
-                SimpleBuffer &writeBuff = context->writeBuff;
+                SimpleBuffer &buffer = context->buffer;
                 uint32_t event = ev.events;
                 int ret = 0;
                 // 可读
-                if (event | EPOLLIN) {
-                    if (readBuff.writeSize() <= 0) {
+                if (event & EPOLLIN) {
+                    if (buffer.writeSize() <= 0) {
                         cout << "接收缓冲区空间不足" << endl;
                     }
                     else {
-                        ret = read(fd, readBuff.writeHead(), readBuff.writeSize());
+                        ret = read(fd, buffer.writeHead(), buffer.writeSize());
                         // 读取失败,关闭连接
                         if (ret == -1) {
                             if (errno != EINTR && errno != EAGAIN) {
@@ -149,10 +147,10 @@ void start(const char *hostname, const char *service)
                                 continue;
                             }
                         }
-                            // 对方关闭连接
+                        // 对方关闭连接
                         else if (ret == 0) {
                             // 发送缓冲区无数据,则关闭连接
-                            if (writeBuff.readSize() <= 0) {
+                            if (buffer.readSize() <= 0) {
                                 close(fd);
                                 cout << "对端关闭连接,服务结束" << endl;
                                 delete context;
@@ -172,7 +170,7 @@ void start(const char *hostname, const char *service)
                         }
                         else if (ret > 0) {
                             cout << "读取数据" << ret << " byte 数据" << endl;
-                            if (readBuff.readSize() <= 0) {
+                            if (buffer.readSize() <= 0) {
                                 ev.events = EPOLLIN | EPOLLOUT;
                                 if (epoll.modifyEvent(ev) < 0) {
                                     PrintStdError("modifyEvent:");
@@ -181,30 +179,31 @@ void start(const char *hostname, const char *service)
                                     continue;
                                 }
                             }
-                            strncpy(writeBuff.writeHead(), readBuff.writeHead(), ret);
-                            writeBuff.setWritePosition(readBuff.writePosition() + ret);
+                            buffer.setWritePosition(buffer.writePosition() + ret);
+
                         }
                     }
                 }
                 // 可写
-                if (event | EPOLLOUT) {
-                    cout << "writeBuff.readSize() = " << writeBuff.readSize() << endl;
-                    if (writeBuff.readSize() > 0) {
-                        ret = write(fd, writeBuff.readHead(), writeBuff.readSize());
+                if (event & EPOLLOUT) {
+                    cout << "buffer.readSize() = " << buffer.readSize() << endl;
+                    if (buffer.readSize() > 0) {
+                        ret = write(fd, buffer.readHead(), buffer.readSize());
                         if (ret < 0) {
                             if (errno != EAGAIN && errno != EINTR) {
                                 close(fd);
                                 delete context;
-                                PrintStdError("write:");
+                                PrintStdError("send to client:");
                                 continue;
                             }
                         }
                         else if (ret >= 0) {
                             cout << "写" << ret << " byte 数据" << endl;
-                            writeBuff.setReadPosition(writeBuff.readSize() + ret);
+                            buffer.setReadPosition(buffer.readPosition() + ret);
                         }
                     }
-                    if (writeBuff.readSize() <= 0) {
+                    if (buffer.readSize() <= 0) {
+                        // 关闭写事件检查
                         if (context->status == 0) {
                             ev.events = EPOLLIN;
                             if (epoll.modifyEvent(ev) < 0) {
