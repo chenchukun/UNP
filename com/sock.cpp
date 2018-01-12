@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <iostream>
 using namespace std;
 
 int readn(int fd, void *buff, size_t len)
@@ -390,9 +391,87 @@ int tcp_connect(const char *hostname, const char *service)
         }
         ptr = ptr->ai_next;
     }
+    freeaddrinfo(result);
     if (ptr == NULL) {
         return -1;
     }
+    return sockfd;
+}
+
+
+int tcp_connect_nonblock(const char *hostname, const char *service, int sec)
+{
+    struct addrinfo *result = host_serv(hostname, service, AF_UNSPEC, SOCK_STREAM);
+    if (result == NULL) {
+        return -1;
+    }
+    struct addrinfo *ptr = result;
+    int sockfd;
+    uint32_t usec = sec * 1000000;
+    timeval timeout;
+    int ret;
+    bool error = false;
+    while (ptr != NULL) {
+        sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+        if (usec > 0) {
+            timeout.tv_sec = usec / 1000000;
+            timeout.tv_usec = usec % 1000000;
+        }
+        if (sockfd >= 0) {
+            set_nonblock(sockfd, true);
+            ret = connect(sockfd, ptr->ai_addr, ptr->ai_addrlen);
+            // 连接成功
+            if (ret == 0) {
+                break;
+            }
+            // 发送错误
+            if (ret == -1 && errno != EINPROGRESS) {
+                ptr = ptr->ai_next;
+                close(sockfd);
+                continue;
+            }
+            fd_set rset, wset;
+            FD_ZERO(&rset);
+            FD_SET(sockfd, &rset);
+            wset = rset;
+            do {
+                ret = select(sockfd+1, &rset, &wset, NULL, usec<=0?NULL: &timeout);
+            } while (ret == -1 && errno == EINTR);
+            // 超时
+            if (ret == 0) {
+                errno = ETIMEDOUT;
+                error = true;
+                close(sockfd);
+                break;
+            }
+            if (FD_ISSET(sockfd, &rset) || FD_ISSET(sockfd, &wset)) {
+                socklen_t len = sizeof(int);
+                int err;
+                if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &err, &len) == 0) {
+                    // 连接成功
+                    if (err == 0) {
+                        break;
+                    }
+                    errno = err;
+                }
+            }
+            if (usec > 0) {
+                usec = usec - (timeout.tv_sec*1000000 + timeout.tv_usec);
+                if (usec <= 0) {
+                    errno = ETIMEDOUT;
+                    close(sockfd);
+                    error = true;
+                    break;
+                }
+            }
+        }
+        ptr = ptr->ai_next;
+    }
+    freeaddrinfo(result);
+    if (ptr == NULL || error) {
+        return -1;
+    }
+    set_nonblock(sockfd, false);
     return sockfd;
 }
 

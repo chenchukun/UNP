@@ -24,7 +24,7 @@ void on_write(uv_fs_t *req) {
     }
     else {
         // 继续调用异步读
-        uv_fs_read(uv_default_loop(), &read_req, open_req.result, &iov, 1, -1, on_read);
+        uv_fs_read(req->loop, &read_req, open_req.result, &iov, 1, -1, on_read);
     }
 }
 
@@ -37,13 +37,13 @@ void on_read(uv_fs_t *req)
     }
     else if (req->result == 0) {
         uv_fs_t close_req;
-        // 关闭文件为同步操作
-        uv_fs_close(uv_default_loop(), &close_req, open_req.result, NULL);
+        // 关闭文件为同步操作,cb指定关闭成功后的回调,可以为NULL
+        uv_fs_close(req->loop, &close_req, open_req.result, NULL);
     }
     else if (req->result > 0) {
         iov.len = req->result;
         // 读取成功则调用异步写
-        uv_fs_write(uv_default_loop(), &write_req, STDOUT_FILENO, &iov, 1, -1, on_write);
+        uv_fs_write(req->loop, &write_req, STDOUT_FILENO, &iov, 1, -1, on_write);
     }
 }
 
@@ -56,7 +56,10 @@ void on_open(uv_fs_t *req)
         // 初始化缓冲区
         iov = uv_buf_init(buffer, sizeof(buffer));
         // 调用异步读
-        uv_fs_read(uv_default_loop(), &read_req, req->result,
+        // req执行读请求request,file指定要读取的文件描述符,bufs指定缓冲区
+        // nbufs指定缓冲区个数(这里是分块缓冲区),offset指定读取的偏移量?
+        // cb指定读取成功后的回调
+        uv_fs_read(req->loop, &read_req, req->result,
                    &iov, 1, -1, on_read);
     }
     else {
@@ -70,9 +73,9 @@ int main(int argc, char **argv)
 
     /*
      * libuv 支持文件异步操作,内部使用线程池来实现异步读写本地文件
-     * uv_fs_open用户异步的打开文件,req指定uv_fs_t类型的handle
+     * uv_fs_open用户异步的打开文件,req指定uv_fs_t类型的request
      * path 指定文件路径,flags 和 mode与open系统调用类似
-     * cb指定文件打开后的回调
+     * cb指定文件打开后的回调,传入NULL则为同步操作,返回文件描述符
      */
     open_req.data = (void*)argv[1];
     uv_fs_open(loop, &open_req, argv[1], O_RDONLY, 0, on_open);
@@ -80,4 +83,11 @@ int main(int argc, char **argv)
     uv_run(loop, UV_RUN_DEFAULT);
 
     uv_loop_close(loop);
+
+    // 回收读写中分配的内存
+    uv_fs_req_cleanup(&open_req);
+    uv_fs_req_cleanup(&read_req);
+    uv_fs_req_cleanup(&write_req);
+
+    return 0;
 }

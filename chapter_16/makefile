@@ -3,7 +3,7 @@ LDFLAGS=../com/libutility.a ../com/libnet.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: testBuff echoSrv
+all: testBuff echoSrv testConnect
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -17,5 +17,8 @@ testBuff: testBuff.o
 echoSrv: echoSrv.o
 	g++ $^ -o $@ $(FLAGS)
 
+testConnect: testConnect.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o testBuff echoSrv
+	rm -rf *.o testBuff echoSrv testConnect

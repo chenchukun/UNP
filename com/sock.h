@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <string>
+#include <unistd.h>
 
 #define family_to_name(family) ((family)==AF_INET?"AF_INET": (family)==AF_INET6?"AF_INET6":"OTHER")
 
@@ -87,12 +88,29 @@ SigFunc* signal_action(int signo, SigFunc *func);
  */
 struct addrinfo* host_serv(const char *hostname, const char *service, int family=0, int socktype=0, int flags=0);
 
+/*
+ * 建立TCP连接
+ */
 int tcp_connect(const char *hostname, const char *service);
 
+/*
+ * 带超时的TCP连接
+ */
+int tcp_connect_nonblock(const char *hostname, const char *service, int sec=-1);
+
+/*
+ * 创建一个TCP监听套接字
+ */
 int tcp_listen(const char *hostname, const char *service, int backlog=10, socklen_t *addrlenp=NULL);
 
+/*
+ * 带超时的可读检测
+ */
 int readable_time(int fd, int sec);
 
+/*
+ * 设置非阻塞I/O
+ */
 int set_nonblock(int connfd, bool op);
 
 #endif //MAIN_UNP_H
