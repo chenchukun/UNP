@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: uvcat
+all: echoSrv
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -11,8 +11,8 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	g++ $(CXXFLAGS) -c $< -o $@
 
-uvcat: uvcat.o
+echoSrv: echoSrv.o
 	g++ $^ -o $@ $(FLAGS)
 
 clean:
-	rm -rf *.o uvcat
+	rm -rf *.o echoSrv

@@ -85,18 +85,18 @@ void start(const char *hostname, const char *service)
 {
     int listenFd = tcp_listen(hostname, service);
     if (listenFd < 0) {
-        PrintStdError("tcp_listen error:");
+        PrintStdError("tcp_listen error");
         exit(1);
     }
     set_nonblock(listenFd, true);
     Epoll epoll;
     if (epoll.init() < 0) {
-        PrintStdError("epoll_create:");
+        PrintStdError("epoll_create");
         close(listenFd);
         exit(1);
     }
     if (epoll.addEvent(listenFd, EPOLLIN) < 0) {
-        PrintStdError("epoll_ctl:");
+        PrintStdError("epoll_ctl");
         close(listenFd);
         exit(1);
     }
@@ -104,7 +104,7 @@ void start(const char *hostname, const char *service)
     while (true) {
         int nready = epoll.wait(-1);
         if (nready < 0) {
-            PrintStdError("epoll_wait:");
+            PrintStdError("epoll_wait");
             continue;
         }
         for (int i=0; i<nready; ++i) {
@@ -116,15 +116,17 @@ void start(const char *hostname, const char *service)
                 for (int k=0; k<10; ++k) {
                     int sockfd = accept(fd, NULL, NULL);
                     if (sockfd < 0) {
-                        PrintStdError("accept:");
+                        if (errno != EINTR && errno != EAGAIN && errno != ECONNABORTED) {
+                            PrintStdError("accept");
+                        }
                         break;
                     }
                     if (epoll.addEvent(sockfd, EPOLLIN) < 0) {
-                        PrintStdError("addEvent:");
+                        PrintStdError("addEvent");
                         close(sockfd);
                         continue;
                     }
-                    cout << "接收新连接成功, fd = " << sockfd << endl;
+//                    cout << "接收新连接成功, fd = " << sockfd << endl;
                 }
             }
             else {
@@ -134,14 +136,14 @@ void start(const char *hostname, const char *service)
                 // 可读
                 if (event & EPOLLIN) {
                     if (buffer.writeSize() <= 0) {
-                        cout << "接收缓冲区空间不足" << endl;
+//                        cout << "接收缓冲区空间不足" << endl;
                     }
                     else {
                         ret = read(fd, buffer.writeHead(), buffer.writeSize());
                         // 读取失败,关闭连接
                         if (ret == -1) {
                             if (errno != EINTR && errno != EAGAIN) {
-                                PrintStdError("读取数据失败:");
+                                PrintStdError("读取数据失败");
                                 close(fd);
                                 delete context;
                                 continue;
@@ -152,7 +154,7 @@ void start(const char *hostname, const char *service)
                             // 发送缓冲区无数据,则关闭连接
                             if (buffer.readSize() <= 0) {
                                 close(fd);
-                                cout << "对端关闭连接,服务结束" << endl;
+//                                cout << "对端关闭连接,服务结束" << endl;
                                 delete context;
                                 continue;
                             }
@@ -161,7 +163,7 @@ void start(const char *hostname, const char *service)
                                 context->status = 1;
                                 ev.events = EPOLLOUT;
                                 if (epoll.modifyEvent(ev) < 0) {
-                                    PrintStdError("modifyEvent:");
+                                    PrintStdError("modifyEvent");
                                     close(fd);
                                     delete context;
                                     continue;
@@ -169,11 +171,11 @@ void start(const char *hostname, const char *service)
                             }
                         }
                         else if (ret > 0) {
-                            cout << "读取数据" << ret << " byte 数据" << endl;
+//                            cout << "读取数据" << ret << " byte 数据" << endl;
                             if (buffer.readSize() <= 0) {
                                 ev.events = EPOLLIN | EPOLLOUT;
                                 if (epoll.modifyEvent(ev) < 0) {
-                                    PrintStdError("modifyEvent:");
+                                    PrintStdError("modifyEvent");
                                     close(fd);
                                     delete context;
                                     continue;
@@ -186,19 +188,19 @@ void start(const char *hostname, const char *service)
                 }
                 // 可写
                 if (event & EPOLLOUT) {
-                    cout << "buffer.readSize() = " << buffer.readSize() << endl;
+//                    cout << "buffer.readSize() = " << buffer.readSize() << endl;
                     if (buffer.readSize() > 0) {
                         ret = write(fd, buffer.readHead(), buffer.readSize());
                         if (ret < 0) {
                             if (errno != EAGAIN && errno != EINTR) {
                                 close(fd);
                                 delete context;
-                                PrintStdError("send to client:");
+                                PrintStdError("send to client");
                                 continue;
                             }
                         }
                         else if (ret >= 0) {
-                            cout << "写" << ret << " byte 数据" << endl;
+//                            cout << "写" << ret << " byte 数据" << endl;
                             buffer.setReadPosition(buffer.readPosition() + ret);
                         }
                     }
@@ -207,17 +209,17 @@ void start(const char *hostname, const char *service)
                         if (context->status == 0) {
                             ev.events = EPOLLIN;
                             if (epoll.modifyEvent(ev) < 0) {
-                                PrintStdError("modifyEvent:");
+                                PrintStdError("modifyEvent");
                                 close(fd);
                                 delete context;
                                 continue;
                             }
-                            cout << "数据发送完毕,取消可写事件" << endl;
+//                            cout << "数据发送完毕,取消可写事件" << endl;
                         }
                         else {
                             close(fd);
                             delete context;
-                            cout << "数据发送完毕,关闭连接" << endl;
+//                            cout << "数据发送完毕,关闭连接" << endl;
                         }
                     }
                 }
@@ -232,6 +234,7 @@ int main(int argc, char **argv)
         cerr << "parameter error: echoSrv hostname service" << endl;
         exit(1);
     }
+    signal_action(SIGPIPE, SIG_IGN);
     start(argv[1], argv[2]);
     return 0;
 }
