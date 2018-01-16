@@ -26,7 +26,7 @@ void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
 
 void echo_write(uv_write_t *req, int status) {
     if (status) {
-        cerr << "Write error ", uv_strerror(status) << endl;
+        cerr << "Write error " <<  uv_strerror(status) << endl;
     }
     free_write_req(req);
 }
@@ -73,6 +73,27 @@ int main(int argc, char **argv)
     struct sockaddr_in addr;
     uv_ip4_addr(argv[1], stoi(argv[2]), &addr);
     uv_tcp_bind(&server, (struct sockaddr*)&addr, 0);
+
+    int send_buff_size = 0;
+    // send_buff_size为0则用于获取套接字发送缓冲区大小,大于0则用于设置发送缓冲区大小
+    // 相当于SO_SNDBUF
+    uv_send_buffer_size((uv_handle_t*)&server, &send_buff_size);
+    cout << "send_buff_size = " << send_buff_size << endl;
+    send_buff_size = 4096;
+    uv_send_buffer_size((uv_handle_t*)&server, &send_buff_size);
+
+    int recv_buffer_size = 0;
+    // send_buff_size为0则用于获取套接字接收缓冲区大小,大于0则用于设置接收缓冲区大小
+    // 相当于SO_RCVBUF
+    uv_recv_buffer_size((uv_handle_t*)&server, &recv_buffer_size);
+    cout << "recv_buffer_size = " << recv_buffer_size << endl;
+    recv_buffer_size = 4096;
+    uv_recv_buffer_size((uv_handle_t*)&server, &recv_buffer_size);
+
+    uv_os_fd_t fd;  // int类型
+    // 获取handl对于的文件描述符
+    uv_fileno((uv_handle_t*)&server, &fd);
+    cout << "uv_fileno = " << fd << endl;
 
     int ret = uv_listen((uv_stream_t*)&server, 1024, on_connection);
     if (ret != 0) {
