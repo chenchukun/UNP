@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: event_loop idle
+all: event_loop idle timer async signal
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -17,5 +17,14 @@ event_loop: event_loop.o
 idle: idle.o
 	g++ $^ -o $@ $(FLAGS)
 
+timer: timer.o
+	g++ $^ -o $@ $(FLAGS)
+
+async: async.o
+	g++ $^ -o $@ $(FLAGS)
+
+signal: signal.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o event_loop idle
+	rm -rf *.o event_loop idle timer async signal
