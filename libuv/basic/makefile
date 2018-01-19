@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: event_loop idle timer async signal work dns
+all: event_loop idle timer async signal work dns thread
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -32,6 +32,8 @@ work: work.o
 dns: dns.o
 	g++ $^ -o $@ $(FLAGS)
 
+thread: thread.o
+	g++ $^ -o $@ $(FLAGS)
 
 clean:
-	rm -rf *.o event_loop idle timer async signal work dns
+	rm -rf *.o event_loop idle timer async signal work dns thread
