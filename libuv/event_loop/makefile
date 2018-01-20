@@ -1,9 +1,9 @@
-CXXFLAGS=-std=c++11 -g
+CXXFLAGS=-std=c++11 -g ../../com/libutility.a ../../com/libnet.a -I../../com
 LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: echoSrv tcp
+all: event_loop
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -11,11 +11,8 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	g++ $(CXXFLAGS) -c $< -o $@
 
-tcp: tcp.o
-	g++ $^ -o $@ $(FLAGS)
-
-echoSrv: echoSrv.o
+event_loop: event_loop.o
 	g++ $^ -o $@ $(FLAGS)
 
 clean:
-	rm -rf *.o echoSrv tcp
+	rm -rf *.o event_loop
