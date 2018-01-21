@@ -10,13 +10,19 @@
 typedef void *QUEUE[2];
 ```
 
-​	QUEUE_NEXT宏，接收一个指向QUEUE的指针，QUEUE[1]，用于获取队列的后继节点
+​	QUEUE_NEXT宏，接收一个指向QUEUE的指针，相当于(QUEUE*)QUEUE[0]，用于获取队列的后继节点。
 
 ```c
-#define QUEUE_NEXT(q)       (*(QUEUE **) &((*(q))[0]))
+#define QUEUE_NEXT(q)	(*(QUEUE **) &((*(q))[0]))
 ```
 
-​	QUEUE_INIT宏用于初始化队列，相当于QUEUE[0] = QUEUE[1] = &QUEUE
+​	QUEUE_PREV宏，接收一个指向QUEUE的指针，相当于(QUEUE*)QUEUE[1]，用于获取队列的前驱节点。
+
+```c
+#define QUEUE_PREV(q)	(*(QUEUE **) &((*(q))[1]))
+```
+
+​	QUEUE_INIT宏用于初始化队列，相当于QUEUE[0] = QUEUE[1] = &QUEUE。
 
 ```c
 #define QUEUE_INIT(q)                                                         \
@@ -24,6 +30,27 @@ typedef void *QUEUE[2];
     QUEUE_NEXT(q) = (q);                                                      \
     QUEUE_PREV(q) = (q);                                                      \
   }                                                                           \
+```
+
+​	QUEUE_FOREACH宏遍历队列中的所有元素
+
+```c
+#define QUEUE_FOREACH(q, h)                                                   \
+  for ((q) = QUEUE_NEXT(h); (q) != (h); (q) = QUEUE_NEXT(q))
+```
+
+​	QUEUE_DATA有QUEUE指针获取到数据节点的指针，传入QUEUE指针，节点类型和QUEUE在节点中的偏移量。
+
+```c
+#define QUEUE_DATA(ptr, type, field)                                          \
+  ((type *) ((char *) (ptr) - offsetof(type, field)))
+```
+
+​	QUEUE_EMPTY宏判断队列是否为空
+
+```c
+#define QUEUE_EMPTY(q)                                                        \
+  ((const QUEUE *) (q) == (const QUEUE *) QUEUE_NEXT(q))
 ```
 
 ####uv_loop_t
@@ -140,6 +167,8 @@ void uv_walk(uv_loop_t* loop, uv_walk_cb walk_cb, void* arg) {
 
 ### 创建时间循环对象
 
+​	创建uv_loop_t对象会初始化内部的各种数据结构，并调用`epoll_create()`创建一个epoll文件描述符。
+
 ​	libuv中可以使用三种方式来创建时间循环类型对象，第一种是动态分配一个对象的内存，并调用`uv_loop_init()`来初始化该对象。
 
 ```c
@@ -158,4 +187,3 @@ uv_loop_t loop;
 ```c
 uv_loop_t *loop = uv_default_loop();
 ```
-
