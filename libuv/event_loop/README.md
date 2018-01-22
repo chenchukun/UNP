@@ -76,12 +76,12 @@ struct uv_loop_s {
 struct uv_loop_s {
   void* data;  // 可以用于存储任意数据，uv_loop_t本身不会用到该字段
   unsigned int active_handles;	// 事件循环的引用计数，相当于epoll上感兴趣文件描述符列表大小？
-  void* handle_queue[2];
-  void* active_reqs[2];
-  unsigned int stop_flag;
+  void* handle_queue[2];		// handle队列
+  void* active_reqs[2];			// 请求队列
+  unsigned int stop_flag;		// event_loop 停止标志
   unsigned long flags;    
   // UV_LOOP_PRIVATE_FIELDS
-  int backend_fd;                                                             
+  int backend_fd;               // epoll 句柄                                           
   void* pending_queue[2];                                                      
   void* watcher_queue[2];                                                     
   uv__io_t** watchers;                                                        

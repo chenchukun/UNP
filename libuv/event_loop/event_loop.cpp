@@ -139,12 +139,16 @@ void function()
 
     int data = 1;
     // data成员可以用于在事件循环上绑定任意类型的数据
-    loop->data = &data;
+    uv_loop_set_data(loop, &data);
+
+    void *pdata = uv_loop_get_data(loop);
+    cout << "loop->data = " << *(int*)pdata << endl;
 
     // 获取uv_loop_t 结构大小
     cout << "uv_loop_size = " << uv_loop_size() << endl;
 
-    // 获取事件循环中活动句柄数
+    // 判断event_loop是否有引用的句柄或请求,
+    // 即handle_queue    active_reqs     closing_handles不同时为空
     cout << "uv_loop_alive = " << uv_loop_alive(loop) << endl;
 
     // 获取事件循环本身的文件描述符
@@ -153,10 +157,11 @@ void function()
     // 获取轮询超时时间,单位为毫秒(相当于epoll_wait的timeout参数)
     cout << "uv_backend_timeout = " << uv_backend_timeout(loop) << endl;
 
-    // ======这两个时间是啥意思?======
-    // 获取毫秒级的当前时间(指的是事件循环开启后缓存的时间开始计时的?)
+    // 获取毫秒级的当前时间uv_loop_t的time字段
+    // 在初始化uv_loop_t时,会将time设置为从系统启动到现在的时间(clock_gettime),
+    // 在之后的每次事件循环中都会更新该时间。
     cout << "uv_now = " << uv_now(loop) << endl;
-    // 更新时间循环的当前时间?
+    // 调用clock_gettime()更新uv_loop_t.time
     uv_update_time(loop);
 
     // 使用walk_cb回调来遍历事件循环中的所有句柄, arg为传递给回调的参数
@@ -164,6 +169,12 @@ void function()
 
     int ret = uv_run(loop, UV_RUN_NOWAIT);
 
+    // 停止事件循环,只是设置uv_loop_t.stop_flag为1,
+    // 事件循环会在最近一次超时后退出循环,而不是继续执行循环
+    uv_stop(loop);
+
+    // 关闭事件循环,并释放资源,只有在所有handle和请求都完成且关闭才能调用成功,
+    // 否则返回UV_EBUSY
     uv_loop_close(loop);
 }
 
