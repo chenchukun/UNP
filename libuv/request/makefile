@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: handle timer
+all: request async
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -11,11 +11,11 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	g++ $(CXXFLAGS) -c $< -o $@
 
-handle: handle.o
+request: request.o
 	g++ $^ -o $@ $(FLAGS)
 
-timer: timer.o
+async: async.o
 	g++ $^ -o $@ $(FLAGS)
 
 clean:
-	rm -rf *.o handle timer
+	rm -rf *.o request async

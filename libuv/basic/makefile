@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: idle timer signal work dns thread process
+all: idle signal work dns thread process
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -12,9 +12,6 @@ $(OBJECTS): %.o:%.cpp
 	g++ $(CXXFLAGS) -c $< -o $@
 
 idle: idle.o
-	g++ $^ -o $@ $(FLAGS)
-
-timer: timer.o
 	g++ $^ -o $@ $(FLAGS)
 
 signal: signal.o
@@ -33,4 +30,4 @@ process: process.o
 	g++ $^ -o $@ $(FLAGS)
 
 clean:
-	rm -rf *.o idle timer signal work dns thread process
+	rm -rf *.o idle signal work dns thread process
