@@ -67,7 +67,7 @@ int main()
     // repeat指定重复触发时间,若为0则不重复触发,非0则在首次触发后间隔repeat毫秒触发
     uv_timer_start(&timer, timer_cb, 10, 1000);
 
-    // prepare handle用于在每个事件循环中执行回调,会在轮询I/O之前执行
+    // prepare handle用于在每个事件循环中执行回调,会在轮询I/O之前(处理完timer之后)执行
     uv_prepare_t prepare;
     uv_prepare_init(loop, &prepare);
     uv_prepare_start(&prepare, prepare_cb);
@@ -77,7 +77,7 @@ int main()
     uv_check_init(loop, &check);
     uv_check_start(&check, check_cb);
 
-    // 空闲 handle,用于在每个事件循环中执行一个回调,在uv_prepare_t之前执行。
+    // 空闲 handle,用于在每个事件循环中执行一个回调,在uv_prepare_t之前,timer之后和io事件之后执行。
     // 与uv_prepare_t不同的是,若无活动事件,循环将执行零超时轮询,并执行idle回调而不是阻塞。
     // uv_idle_t不止在没有活动事件(空闲)时回调,而是在每次事件循环中都回调。
     // 若设置了uv_idle_t,在空闲时执行完uv_idle_t回调后,
@@ -85,6 +85,9 @@ int main()
     uv_idle_t idle;
     uv_idle_init(loop, &idle);
     uv_idle_start(&idle, idle_cb);
+
+    // libuv中各种回调的执行顺序:
+    //        uv_timer、uv_handle_t、uv_idle_t、uv_prepare_t、uv_check_t
 
     uv_run(loop, UV_RUN_DEFAULT);
 

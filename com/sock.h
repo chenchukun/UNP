@@ -67,7 +67,7 @@ int sock_listen(int family, int backlog, uint16_t port=0, const char *ip=NULL);
 /*
  * 创建一个监听套接字描述符,成功返回sockfd,失败返回-1
  */
-int sock_listen(int sockfd, int family, int backlog, uint16_t port=0, const char *ip=NULL);
+int sock_listen(int sockfd, int family, int backlog, uint16_t port, const char *ip=NULL);
 
 /*
  * 返回一个连接套接字,成功返回connfd,失败返回-1
@@ -112,5 +112,9 @@ int readable_time(int fd, int sec);
  * 设置非阻塞I/O
  */
 int set_nonblock(int connfd, bool op);
+
+int set_nodelay(int connfd, bool op);
+
+int set_reuseaddr(int connfd, bool op);
 
 #endif //MAIN_UNP_H

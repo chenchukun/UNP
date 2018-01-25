@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: handle timer
+all: handle timer poll signal
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -17,5 +17,11 @@ handle: handle.o
 timer: timer.o
 	g++ $^ -o $@ $(FLAGS)
 
+poll: poll.o
+	g++ $^ -o $@ $(FLAGS)
+
+signal: signal.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o handle timer
+	rm -rf *.o handle timer poll signal

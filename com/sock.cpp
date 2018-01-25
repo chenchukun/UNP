@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <netinet/tcp.h>
 #include <iostream>
 using namespace std;
 
@@ -534,4 +535,16 @@ int set_nonblock(int connfd, bool op)
         flags &= ~O_NONBLOCK;
     }
     return fcntl(connfd, F_SETFL, flags);
+}
+
+int set_nodelay(int connfd, bool op)
+{
+    int optval = op? 1: 0;
+    return setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+}
+
+int set_reuseaddr(int connfd, bool op)
+{
+    int optval = op? 1: 0;
+    return setsockopt(connfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 }
