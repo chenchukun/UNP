@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: echoSrv tcp
+all: echoSrv tcp stream
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -17,5 +17,8 @@ tcp: tcp.o
 echoSrv: echoSrv.o
 	g++ $^ -o $@ $(FLAGS)
 
+stream: stream.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o echoSrv tcp
+	rm -rf *.o echoSrv tcp stream
