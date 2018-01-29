@@ -7,19 +7,50 @@
 #include <string>
 #include <netinet/in.h>
 #include <thread>
+#include <cstring>
 #include <unistd.h>
 using namespace std;
 
+void shutdown_cb(uv_shutdown_t *req, int status)
+{
+    cout << "shutdown_cb: " << endl;
+    // handle指向此连接正在运行的流的指针
+    uv_read_stop(req->handle);
+    uv_close((uv_handle_t*)req->handle, NULL);
+    free(req->handle);
+    free(req);
+}
+
+void write_cb(uv_write_t *req, int  status)
+{
+    if (status != 0) {
+        cerr << "write_cb: " << uv_strerror(status) << endl;
+        uv_shutdown_t *req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
+        uv_shutdown(req, req->handle, shutdown_cb);
+    }
+    free(req);
+}
+
 void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf )
 {
-    cout << "read_cb: tid = " << this_thread::get_id() << endl;
+//    cout << "read_cb: tid = " << this_thread::get_id() << endl;
     if (nread > 0) {
         cout << "read_cb: " << buf->base << endl;
+        uv_write_t *wreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+        uv_write(wreq, stream, buf, 1, write_cb);
+        if (strncmp(buf->base, "shutdown", 8) == 0) {
+            uv_shutdown_t *req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
+            uv_shutdown(req, stream, shutdown_cb);
+        }
         return;
     }
+    // 读取出错
     if (nread < 0) {
         if (nread != UV_EOF) {
             cerr << "read_cb error: " << uv_strerror(nread) << endl;
+        }
+        else {
+            cout << "client close" << endl;
         }
         uv_read_stop(stream);
         uv_close((uv_handle_t*)stream, NULL);
@@ -30,6 +61,7 @@ void read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf )
 
 void alloc_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 {
+//    cout << "alloc_cb: tid = " << this_thread::get_id() << endl;
     buf->base = (char*) malloc(suggested_size);
     buf->len = suggested_size;
 }
@@ -37,7 +69,7 @@ void alloc_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 void connection_cb(uv_stream_t *server, int status)
 {
-    cout << "connection_cb: tid = " << this_thread::get_id() << endl;
+//    cout << "connection_cb: tid = " << this_thread::get_id() << endl;
     if (status != 0) {
         cerr << "connection_cb: " << uv_strerror(status) << endl;
         return;
@@ -54,9 +86,15 @@ void connection_cb(uv_stream_t *server, int status)
     }
 }
 
+void timer_cb(uv_timer_t *handle)
+{
+    cout << "timer_cb" << endl;
+    uv_stop(uv_default_loop());
+}
+
 int main(int argc, char **argv)
 {
-    cout << "main: tid = " << this_thread::get_id() << endl;
+//    cout << "main: tid = " << this_thread::get_id() << endl;
     uv_loop_t *loop = uv_default_loop();
 
     uv_tcp_t *server = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
@@ -85,6 +123,10 @@ int main(int argc, char **argv)
         cerr << "uv_listen: " << uv_strerror(ret) << endl;
         exit(-1);
     }
+
+    uv_timer_t timer;
+    uv_timer_init(loop, &timer);
+    uv_timer_start(&timer, timer_cb, 30000, 0);
 
     uv_run(loop, UV_RUN_DEFAULT);
 
