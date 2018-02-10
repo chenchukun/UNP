@@ -1,5 +1,5 @@
-CXXFLAGS=-std=c++11 -g ../libuv_cpp.a
-LDFLAGS=-luv
+CXXFLAGS=-std=c++11 -g
+LDFLAGS=-luv ../libuv_cpp.a
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 

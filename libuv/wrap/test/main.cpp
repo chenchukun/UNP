@@ -6,9 +6,34 @@
 #include <iostream>
 using namespace std;
 
-void connectionCb(uv_stream_t* server, int status)
+
+void connectionCb(TcpConnectionPtr &connectionPtr)
 {
-    cout << "connectionCb" << endl;
+    if (connectionPtr->connected()) {
+        auto local = connectionPtr->getLocalAddr();
+        auto remote = connectionPtr->getRemoteAddr();
+        char buff[64];
+        uv_ip4_name(local.get(), buff, sizeof(buff));
+        cout << "localAddr: " << buff << endl;
+        uv_ip4_name(remote.get(), buff, sizeof(buff));
+        cout << "remoteAddr: " << buff << endl;
+        cout << "connected: " << connectionPtr->connected() << endl;
+    }
+    else {
+        connectionPtr->shutdown();
+        cout << "connected: " << connectionPtr->connected() << endl;
+    }
+
+}
+
+void messageCallback(TcpConnectionPtr &connectionPtr, Buffer &buffer)
+{
+    cout << "messageCallback: " << buffer.readBytes() << endl;
+}
+
+void errorCallback(TcpConnectionPtr &connectionPtr, int errcode)
+{
+    cout << "errorCallback" << endl;
 }
 
 int main()
@@ -18,6 +43,8 @@ int main()
     TcpServer tcpServer(loop);
 
     tcpServer.setConnectionCallback(connectionCb);
+    tcpServer.setMessageCallback(messageCallback);
+    tcpServer.setErrorCallback(errorCallback);
 
     int ret = tcpServer.start(1618);
     if (ret != 0) {
