@@ -7,7 +7,9 @@
 
 #include <uv.h>
 #include <memory>
+#include <mutex>
 #include "Buffer.h"
+#include <uv.h>
 
 class TcpServer;
 
@@ -18,7 +20,8 @@ public:
 
     TcpConnection(uv_loop_t *loop)
         : loop_(loop),
-          remoteClose_(false)
+          remoteClose_(false),
+          sending_(false)
     {
         uv_tcp_init(loop_, &client_);
     }
@@ -31,12 +34,18 @@ public:
 
     void shutdown();
 
+    void send(const std::string &str);
+
 private:
     static void shutdownCallback(uv_handle_t* handle);
 
     static void readCallback(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
 
     static void allocCallback(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
+
+    static void writeComplete(uv_write_t* req, int status);
+
+    void sendImpl();
 
 private:
     uv_tcp_t client_;
@@ -45,7 +54,13 @@ private:
 
     bool remoteClose_;
 
+    bool sending_;
+
+    std::mutex mutex_;
+
     Buffer readBuff_, writeBuff_;
+
+    uv_write_t writeReq;
 };
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;

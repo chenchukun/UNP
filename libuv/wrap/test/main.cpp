@@ -4,6 +4,7 @@
 
 #include "../TcpServer.h"
 #include <iostream>
+#include <signal.h>
 using namespace std;
 
 
@@ -28,7 +29,11 @@ void connectionCb(TcpConnectionPtr &connectionPtr)
 
 void messageCallback(TcpConnectionPtr &connectionPtr, Buffer &buffer)
 {
-    cout << "messageCallback: " << buffer.readBytes() << endl;
+    cout << "messageCallback: " << endl;
+    cout << "readBytes(): " << buffer.readBytes() << endl;
+    string message = buffer.readAll();
+//    cout << "message = " << message << endl;
+    connectionPtr->send(message);
 }
 
 void errorCallback(TcpConnectionPtr &connectionPtr, int errcode)
@@ -38,6 +43,8 @@ void errorCallback(TcpConnectionPtr &connectionPtr, int errcode)
 
 int main()
 {
+    signal(SIGPIPE, SIG_IGN);
+
     uv_loop_t *loop = uv_default_loop();
 
     TcpServer tcpServer(loop);

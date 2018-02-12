@@ -5,6 +5,7 @@
 #include "TcpConnection.h"
 #include "TcpServer.h"
 #include <iostream>
+#include <vector>
 using namespace std;
 
 bool TcpConnection::connected()
@@ -63,7 +64,7 @@ void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_bu
         }
         else if (nread > 0){
             if (server->messageCallback_ != NULL) {
-                it->second->readBuff_.setWritePosition(it->second->readBuff_.writePos_ + nread);
+                it->second->readBuff_.writePos_ += nread;
                 server->messageCallback_(it->second, it->second->readBuff_);
             }
             else {
@@ -88,9 +89,40 @@ void TcpConnection::allocCallback(uv_handle_t* handle, size_t suggested_size, uv
     auto it = server->connectionMap_.find(reinterpret_cast<int64_t>(handle));
     if (it != server->connectionMap_.end()) {
         TcpConnectionPtr connectionPtr = it->second;
-        connectionPtr->readBuff_.initUVBuffer(buf);
+        connectionPtr->readBuff_.initUVReadBuf(buf);
     }
     else {
         // BUG?
     }
+}
+
+void TcpConnection::writeComplete(uv_write_t* req, int status)
+{
+    pair<bool*, void*> *data = static_cast<pair<bool*, void*>*>(req->data);
+    vector<char*> *backup = static_cast<vector<char*>*>(data->second);
+    for (auto item : *backup) {
+        free(item);
+    }
+    free(backup);
+    free(data);
+    *(data->first) = false;
+}
+
+void TcpConnection::send(const std::string &str)
+{
+    lock_guard<mutex> guard(mutex_);
+    writeBuff_.append(str);
+    if (sending_ == false) {
+        sendImpl();
+    }
+}
+
+void TcpConnection::sendImpl()
+{
+    sending_ = true;
+    uv_buf_t *buf;
+    size_t size = writeBuff_.initUVWriteBuf(&writeReq, &buf);
+    writeReq.data = new pair<bool*, void*>(&sending_, writeReq.data);
+    uv_write(reinterpret_cast<uv_write_t*>(&writeReq), reinterpret_cast<uv_stream_t*>(&client_),
+             buf, size, TcpConnection::writeComplete);
 }
