@@ -9,14 +9,20 @@ using namespace std;
 using namespace muduo::net;
 using namespace muduo;
 
-void onConnection(TcpConnectionPtr &conn)
+void onConnection(const TcpConnectionPtr &conn)
 {
-
+    cout << conn->peerAddress().toIpPort() << (conn->connected()? " online": " offline") << endl;
 }
 
-void onMessage(TcpConnectionPtr &conn, Buffer *buf, Timestamp time)
+void onMessage(const TcpConnectionPtr &conn, Buffer *buf, Timestamp time)
 {
+    cout << "onMessage" << endl;
+    conn->send(buf);
+}
 
+void onWriteComplete(const TcpConnectionPtr &conn)
+{
+    cout << "onWriteComplete" << endl;
 }
 
 int main()
@@ -26,6 +32,7 @@ int main()
     TcpServer server(&loop, listenAddr, "EchoServer");
     server.setConnectionCallback(onConnection);
     server.setMessageCallback(onMessage);
+    server.setWriteCompleteCallback(onWriteComplete);
     server.start();
     loop.loop();
     return 0;
