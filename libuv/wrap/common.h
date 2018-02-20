@@ -13,4 +13,7 @@
         }                       \
     }
 
+#define LOG(fmt, ...) \
+    printf("[%s:%d] " fmt, __FILE__, __LINE__, ##__VA_ARGS__);
+
 #endif //MAIN_COMMON_H
