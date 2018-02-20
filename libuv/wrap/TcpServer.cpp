@@ -7,6 +7,8 @@
 #include <iostream>
 using namespace std;
 
+NAMESPACE_START
+
 int TcpServer::start(const std::string &ip, int port, int backlog) {
 
     server_ = static_cast<uv_tcp_t*>(malloc(sizeof(uv_tcp_t)));
@@ -60,8 +62,9 @@ void TcpServer::connectionCallback(uv_stream_t *server, int status)
         }
         else {
             // 错误回调?
-            cerr << "uv_accept: " << strerror(ret) << "(" << ret << ")" << endl;
+            cerr << "uv_accept: " << uv_strerror(ret) << "(" << ret << ")" << endl;
         }
     }
 }
 
+NAMESPACE_END

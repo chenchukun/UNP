@@ -9,8 +9,11 @@
 #include <cstdlib>
 #include <map>
 #include <mutex>
+#include "common.h"
 #include <string>
 #include "TcpConnection.h"
+
+NAMESPACE_START
 
 typedef void (*ConnectionCallback)(TcpConnectionPtr &connectionPtr);
 
@@ -66,5 +69,7 @@ private:
 
     ErrorCallback errorCallback_;
 };
+
+NAMESPACE_END
 
 #endif //MAIN_TCPSERVER_HPP

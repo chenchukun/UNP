@@ -9,11 +9,14 @@
 #include <algorithm>
 #include <string>
 #include <assert.h>
+#include "common.h"
 #include <uv.h>
+
+NAMESPACE_START
 
 class TcpConnection;
 
-class SimpBuffer
+class Buffer
 {
 public:
     friend TcpConnection;
@@ -30,11 +33,11 @@ public:
         return capacity_;
     }
 
-    size_t readBytes() const {
+    size_t readableBytes() const {
         return writePos_ - readPos_;
     }
 
-    size_t writeBytes() const {
+    size_t writeableBytes() const {
         return capacity_ - writePos_;
     }
 
@@ -74,54 +77,58 @@ public:
         append(reinterpret_cast<const char*>(&nint32), sizeof(int32));
     }
 
+    /*
     void appendInt64(int64_t int64) {
         int64_t nint64 = htonll(int64);
         append(reinterpret_cast<const char*>(&nint64), sizeof(int64));
     }
+     */
 
     int8_t readInt8() {
-        assert(readBytes() >= sizeof(int8_t));
+        assert(readableBytes() >= sizeof(int8_t));
         int8_t *p = reinterpret_cast<int8_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int8_t));
         return *p;
     }
 
     int16_t readInt16() {
-        assert(readBytes() >= sizeof(int16_t));
+        assert(readableBytes() >= sizeof(int16_t));
         int16_t *p = reinterpret_cast<int16_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int16_t));
         return *p;
     }
 
     int32_t readInt32() {
-        assert(readBytes() >= sizeof(int32_t));
+        assert(readableBytes() >= sizeof(int32_t));
         int32_t *p = reinterpret_cast<int32_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int32_t));
         return *p;
     }
 
+    /*
     int64_t readInt64() {
-        assert(readBytes() >= sizeof(int64_t));
+        assert(readableBytes() >= sizeof(int64_t));
         int64_t *p = reinterpret_cast<int64_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int64_t));
         return *p;
     }
+     */
 
     std::string readString(size_t len) {
-        assert(readBytes() >= len);
+        assert(readableBytes() >= len);
         std::string str(buffer_.data() + readPos_, len);
         setReadPosition(readPos_ + len);
         return std::move(str);
     }
 
     std::string readAll() {
-        std::string str(buffer_.data() + readPos_, readBytes());
+        std::string str(buffer_.data() + readPos_, readableBytes());
         clear();
         return std::move(str);
     }
 
     void discard(size_t len) {
-        assert(readBytes() >= len);
+        assert(readableBytes() >= len);
         setReadPosition(readPos_ + len);
     }
 
@@ -147,5 +154,7 @@ private:
 
     size_t writePos_;
 };
+
+NAMESPACE_END
 
 #endif //MAIN_Buffer_H

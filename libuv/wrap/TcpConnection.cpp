@@ -8,6 +8,7 @@
 #include <vector>
 using namespace std;
 
+NAMESPACE_START
 bool TcpConnection::connected()
 {
     return !remoteClose_;
@@ -105,3 +106,4 @@ void TcpConnection::send(const std::string &str)
 
 }
 
+NAMESPACE_END

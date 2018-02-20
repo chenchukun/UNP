@@ -1,7 +1,7 @@
 CC=g++
 
 CXXFLAGS=-std=c++11 -g
-LDFLAGS=
+LDFLAGS= -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
@@ -13,7 +13,7 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	$(CC) $(CXXFLAGS) -c $< -o $@
 
-libuv_cpp.a: TcpServer.o TcpConnection.o Buffer.o DataBlock.o
+libuv_cpp.a: TcpServer.o TcpConnection.o Buffer.o EventLoop.o
 	ar -rc $@ $^
 
 clean:

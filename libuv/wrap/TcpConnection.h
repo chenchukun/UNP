@@ -8,8 +8,11 @@
 #include <uv.h>
 #include <memory>
 #include <mutex>
+#include "common.h"
 #include "Buffer.h"
 #include <uv.h>
+
+NAMESPACE_START
 
 class TcpServer;
 
@@ -64,5 +67,7 @@ private:
 };
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
+
+NAMESPACE_END
 
 #endif //MAIN_TCPCONNECTION_H

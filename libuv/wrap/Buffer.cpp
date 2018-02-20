@@ -1,9 +1,11 @@
 //
 // Created by chenchukun on 18/2/11.
 //
-#include "SimpleBuffer.h"
+#include "Buffer.h"
 
-void SimpleBuffer::setReadPosition(size_t pos)
+NAMESPACE_START
+
+void Buffer::setReadPosition(size_t pos)
 {
     assert(pos < capacity_ and pos >= 0);
     readPos_ = pos;
@@ -12,7 +14,7 @@ void SimpleBuffer::setReadPosition(size_t pos)
     }
 }
 
-void SimpleBuffer::setWritePosition(size_t pos)
+void Buffer::setWritePosition(size_t pos)
 {
     assert(pos < capacity_ and pos >= 0);
     writePos_ = pos;
@@ -21,34 +23,34 @@ void SimpleBuffer::setWritePosition(size_t pos)
     }
 }
 
-void SimpleBuffer::compact()
+void Buffer::compact()
 {
     if (readPos_ == writePos_) {
         clear();
     }
     else {
         std::copy(buffer_.begin()+readPos_, buffer_.begin()+writePos_, buffer_.begin());
-        writePos_ = readBytes();
+        writePos_ = readableBytes();
         readPos_ = 0;
     }
 }
 
-void SimpleBuffer::resize(size_t size)
+void Buffer::resize(size_t size)
 {
     std::vector<char> newBuf;
     newBuf.reserve(size);
     std::copy(buffer_.begin()+readPos_, buffer_.begin()+writePos_, newBuf.begin());
 //        buffer_.swap(newBuf);
     buffer_ = newBuf;
-    writePos_ = readBytes();
+    writePos_ = readableBytes();
     readPos_ = 0;
     capacity_ = size;
 }
 
-void SimpleBuffer::checkSize(size_t len)
+void Buffer::checkSize(size_t len)
 {
-    if (writeBytes() < len) {
-        if (capacity() - writeBytes() < len) {
+    if (writeableBytes() < len) {
+        if (capacity() - writeableBytes() < len) {
             resize(capacity() + len*2);
         }
         else {
@@ -57,10 +59,11 @@ void SimpleBuffer::checkSize(size_t len)
     }
 }
 
-void SimpleBuffer::initUVBuffer(uv_buf_t *buff)
+void Buffer::initUVBuffer(uv_buf_t *buff)
 {
     checkSize(128);
     buff->base = buffer_.data() + writePos_;
-    buff->len = writeBytes();
+    buff->len = writeableBytes();
 }
 
+NAMESPACE_END
