@@ -4,12 +4,23 @@
 
 #include "TcpServer.h"
 #include "common.h"
+#include "EventLoop.h"
 #include <iostream>
 using namespace std;
 
 NAMESPACE_START
 
-int TcpServer::start(const std::string &ip, int port, int backlog) {
+TcpServer::TcpServer(EventLoop *eventLoop)
+    : eventLoop_(eventLoop),
+      loop_(eventLoop_->getLoop()),
+      connectionCallback_(NULL),
+      messageCallback_(NULL),
+      errorCallback_(NULL),
+      autoId_(0)
+{
+}
+
+int TcpServer::start(const SockAddr &addr, int backlog) {
 
     server_ = static_cast<uv_tcp_t*>(malloc(sizeof(uv_tcp_t)));
 
@@ -17,52 +28,49 @@ int TcpServer::start(const std::string &ip, int port, int backlog) {
 
     CHECK_ZERO_RETURN(uv_tcp_init(loop_, server_));
 
-    struct sockaddr_in addr;
-
-    CHECK_ZERO_RETURN(uv_ip4_addr(ip.c_str(), port, &addr));
-    CHECK_ZERO_RETURN(uv_tcp_bind(server_, reinterpret_cast<struct sockaddr*>(&addr), 0));
+    CHECK_ZERO_RETURN(uv_tcp_bind(server_, addr.getAddr(), 0));
 
     CHECK_ZERO_RETURN(uv_listen(reinterpret_cast<uv_stream_t*>(server_), backlog, TcpServer::connectionCallback));
 
     return 0;
 }
 
-int TcpServer::start(int port, int backlog) {
-    return start("0.0.0.0", port);
-}
-
 // ========== static callback ============
 
 void TcpServer::connectionCallback(uv_stream_t *server, int status)
 {
+    if (status != 0) {
+        LOG_ERROR("connectionCallback: %s(%s)", uv_strerror(status), uv_err_name(status));
+        return;
+    }
+    TcpServer *server_ = static_cast<TcpServer*>(server->data);
     for (int i=0; i<3; ++i) {
-        TcpConnectionPtr connectionPtr = make_shared<TcpConnection>(server->loop);
+        TcpConnectionPtr connectionPtr = make_shared<TcpConnection>(server_, server_->autoId_++);
+        connectionPtr->client_.data = static_cast<void*>(connectionPtr.get());
         int ret = uv_accept(server, reinterpret_cast<uv_stream_t*>(&connectionPtr->client_));
         if (ret == 0) {
-            TcpServer *server_ = static_cast<TcpServer*>(server->data);
-            connectionPtr->client_.data = server_;
             {
                 // 在IO线程执行
  //               lock_guard<mutex> guard(server_->mutex_);
-                server_->connectionMap_[reinterpret_cast<int64_t>(&connectionPtr->client_)] = connectionPtr;
+                server_->connectionMap_[connectionPtr->id_] = connectionPtr;
             }
             ret = uv_read_start(reinterpret_cast<uv_stream_t*>(&connectionPtr->client_),
                                 TcpConnection::allocCallback, TcpConnection::readCallback);
             if (ret != 0) {
                 connectionPtr->shutdown();
-                cerr << "uv_read_start: " << uv_strerror(ret) << endl;
+                LOG_ERROR("uv_read_start: %s(%s)", uv_strerror(ret), uv_err_name(ret));
                 // 错误回调?
             }
             if (server_->connectionCallback_ != NULL) {
                 server_->connectionCallback_(connectionPtr);
             }
         }
-        else if (ret == -35) {
+        else if (ret == UV_EAGAIN) {
             break;
         }
         else {
             // 错误回调?
-            cerr << "uv_accept: " << uv_strerror(ret) << "(" << ret << ")" << endl;
+            LOG_ERROR("uv_accept: %s(%s)", uv_strerror(ret), uv_err_name(ret));
         }
     }
 }

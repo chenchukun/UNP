@@ -11,6 +11,7 @@
 #include <mutex>
 #include "common.h"
 #include <string>
+#include "SockAddr.h"
 #include "TcpConnection.h"
 
 NAMESPACE_START
@@ -21,23 +22,21 @@ typedef void (*MessageCallback)(TcpConnectionPtr &connectionPtr, Buffer &buffer)
 
 typedef void (*ErrorCallback)(TcpConnectionPtr &connectionPtr, int errcode);
 
+class EventLoop;
+
 class TcpServer
 {
 public:
-    friend TcpConnection;
+    friend class TcpConnection;
 
-    TcpServer(uv_loop_t *loop)
-        : loop_(loop),
-          connectionCallback_(NULL),
-          messageCallback_(NULL),
-          errorCallback_(NULL)
-    {
+    TcpServer(EventLoop *eventLoop);
 
+    ~TcpServer() {
+        uv_close(reinterpret_cast<uv_handle_t*>(server_), NULL);
+        free(server_);
     }
 
-    int start(const std::string &ip, int port, int backlog=1024);
-
-    int start(int port, int backlog=1024);
+    int start(const SockAddr &addr, int backlog=1024);
 
     void setConnectionCallback(ConnectionCallback cb) {
         connectionCallback_ = cb;
@@ -55,6 +54,9 @@ private:
     static void connectionCallback(uv_stream_t* server, int status);
 
 private:
+
+    EventLoop *eventLoop_;
+
     uv_loop_t *loop_;
 
     uv_tcp_t *server_;
@@ -68,6 +70,8 @@ private:
     MessageCallback messageCallback_;
 
     ErrorCallback errorCallback_;
+
+    uint64_t autoId_;
 };
 
 NAMESPACE_END

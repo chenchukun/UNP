@@ -49,6 +49,10 @@ public:
 
     void resize(size_t size);
 
+    void reset() {
+        readPos_ = writePos_ = 0;
+    }
+
     void append(const char *ptr, size_t len) {
         checkSize(len);
         std::copy(ptr, ptr+len, buffer_.begin()+writePos_);
@@ -77,12 +81,10 @@ public:
         append(reinterpret_cast<const char*>(&nint32), sizeof(int32));
     }
 
-    /*
     void appendInt64(int64_t int64) {
         int64_t nint64 = htonll(int64);
         append(reinterpret_cast<const char*>(&nint64), sizeof(int64));
     }
-     */
 
     int8_t readInt8() {
         assert(readableBytes() >= sizeof(int8_t));
@@ -105,14 +107,12 @@ public:
         return *p;
     }
 
-    /*
     int64_t readInt64() {
         assert(readableBytes() >= sizeof(int64_t));
         int64_t *p = reinterpret_cast<int64_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int64_t));
         return *p;
     }
-     */
 
     std::string readString(size_t len) {
         assert(readableBytes() >= len);

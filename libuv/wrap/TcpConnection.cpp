@@ -9,27 +9,36 @@
 using namespace std;
 
 NAMESPACE_START
+
+TcpConnection::TcpConnection(TcpServer *server, uint64_t id)
+    : server_(server),
+      remoteClose_(false),
+      id_(id)
+{
+    uv_tcp_init(server_->loop_, &client_);
+}
+
 bool TcpConnection::connected()
 {
     return !remoteClose_;
 }
 
-std::shared_ptr<sockaddr_in> TcpConnection::getLocalAddr()
+shared_ptr<SockAddr> TcpConnection::getLocalAddr()
 {
-    std::shared_ptr<sockaddr_in> paddr = make_shared<sockaddr_in>();
-    int len = sizeof(*paddr);
-    int ret = uv_tcp_getsockname(&client_, (sockaddr*)paddr.get(), &len);
+    std::shared_ptr<SockAddr> paddr = make_shared<SockAddr>();
+    int len = paddr->getAddrLength();
+    int ret = uv_tcp_getsockname(&client_, paddr->getAddr(), &len);
     if (ret != 0) {
         return NULL;
     }
     return paddr;
 }
 
-std::shared_ptr<sockaddr_in> TcpConnection::getRemoteAddr()
+shared_ptr<SockAddr> TcpConnection::getRemoteAddr()
 {
-    std::shared_ptr<sockaddr_in> paddr = make_shared<sockaddr_in>();
-    int len = sizeof(*paddr);
-    int ret = uv_tcp_getpeername(&client_, (sockaddr*)paddr.get(), &len);
+    std::shared_ptr<SockAddr> paddr = make_shared<SockAddr>();
+    int len = paddr->getAddrLength();
+    int ret = uv_tcp_getpeername(&client_, paddr->getAddr(), &len);
     if (ret != 0) {
         return NULL;
     }
@@ -38,25 +47,38 @@ std::shared_ptr<sockaddr_in> TcpConnection::getRemoteAddr()
 
 void TcpConnection::shutdown()
 {
-    uv_close(reinterpret_cast<uv_handle_t*>(&client_), TcpConnection::shutdownCallback);
+    uv_shutdown_t *req = static_cast<uv_shutdown_t*>(malloc(sizeof(uv_shutdown_t)));
+    req->data = static_cast<void*>(this);
+    uv_shutdown(req, reinterpret_cast<uv_stream_t*>(&client_), TcpConnection::shutdownCallback);
 }
 
 // ========== static callback ============
 
-void TcpConnection::shutdownCallback(uv_handle_t* handle)
+void TcpConnection::closeCallback(uv_handle_t* handle)
 {
-    TcpServer *server_ = static_cast<TcpServer*>(handle->data);
+    TcpConnection *conn = static_cast<TcpConnection*>(handle->data);
+    TcpServer *server = conn->server_;
     {
         // uv_close回调是在IO线程执行?
 //        lock_guard<mutex> guard(server_->mutex_);
-        server_->connectionMap_.erase(reinterpret_cast<int64_t>(handle));
+        server->connectionMap_.erase(conn->id_);
     }
+}
+
+void TcpConnection::shutdownCallback(uv_shutdown_t* handle, int status)
+{
+    TcpConnection *conn = static_cast<TcpConnection*>(handle->data);
+    TcpServer *server = conn->server_;
+    uv_close(reinterpret_cast<uv_handle_t*>(&conn->client_), TcpConnection::closeCallback);
 }
 
 void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
 {
-    TcpServer *server = static_cast<TcpServer*>(stream->data);
-    auto it = server->connectionMap_.find(reinterpret_cast<int64_t>(stream));
+    TcpConnection *conn = static_cast<TcpConnection*>(stream->data);
+    TcpServer *server = conn->server_;
+    auto it = server->connectionMap_.find(conn->id_);
+    assert(it != server->connectionMap_.end());
+
     if (it != server->connectionMap_.end()) {
         // 对端关闭连接
         if (nread == UV_EOF) {
@@ -64,12 +86,13 @@ void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_bu
             server->connectionCallback_(it->second);
         }
         else if (nread > 0){
+            it->second->readBuff_.setWritePosition(it->second->readBuff_.writePos_ + nread);
             if (server->messageCallback_ != NULL) {
                 server->messageCallback_(it->second, it->second->readBuff_);
             }
             else {
                 // 丢弃信息
- //               it->second->readBuff_.clear();
+                it->second->readBuff_.clear();
             }
         }
         else {
@@ -85,11 +108,14 @@ void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_bu
 
 void TcpConnection::allocCallback(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
 {
-    TcpServer *server = static_cast<TcpServer*>(handle->data);
-    auto it = server->connectionMap_.find(reinterpret_cast<int64_t>(handle));
+    TcpConnection *conn = static_cast<TcpConnection*>(handle->data);
+    TcpServer *server = conn->server_;
+    auto it = server->connectionMap_.find(conn->id_);
+    assert(it != server->connectionMap_.end());
+
     if (it != server->connectionMap_.end()) {
         TcpConnectionPtr connectionPtr = it->second;
-//        connectionPtr->readBuff_.initUVReadBuf(buf);
+        connectionPtr->readBuff_.initUVBuffer(buf);
     }
     else {
         // BUG?
@@ -98,12 +124,21 @@ void TcpConnection::allocCallback(uv_handle_t* handle, size_t suggested_size, uv
 
 void TcpConnection::writeComplete(uv_write_t* req, int status)
 {
-
+    pair<string*, uv_buf_t*> *data = static_cast<pair<string*, uv_buf_t*>*>(req->data);
+    delete data->first;
+    delete data->second;
 }
 
-void TcpConnection::send(const std::string &str)
+void TcpConnection::send(const string &str)
 {
-
+    uv_write_t *handle = static_cast<uv_write_t*>(malloc(sizeof(uv_write_t)));
+    string *data = new string;
+    *data = move(str);
+    uv_buf_t *buf = static_cast<uv_buf_t*>(malloc(sizeof(uv_buf_t)));
+    buf->base = const_cast<char*>(data->data());
+    buf->len = data->size();
+    handle->data = static_cast<void*>(new pair<string*, uv_buf_t*>(data, buf));
+    uv_write(handle, reinterpret_cast<uv_stream_t*>(&client_), buf, 1, TcpConnection::writeComplete);
 }
 
 NAMESPACE_END

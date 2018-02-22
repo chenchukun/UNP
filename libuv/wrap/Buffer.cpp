@@ -2,12 +2,14 @@
 // Created by chenchukun on 18/2/11.
 //
 #include "Buffer.h"
+#include <iostream>
+using namespace std;
 
 NAMESPACE_START
 
 void Buffer::setReadPosition(size_t pos)
 {
-    assert(pos < capacity_ and pos >= 0);
+    assert(pos <= capacity_ && pos >= 0);
     readPos_ = pos;
     if (readPos_ == writePos_) {
         readPos_ = writePos_ = 0;
@@ -16,7 +18,7 @@ void Buffer::setReadPosition(size_t pos)
 
 void Buffer::setWritePosition(size_t pos)
 {
-    assert(pos < capacity_ and pos >= 0);
+    assert(pos <= capacity_ && pos >= 0);
     writePos_ = pos;
     if (readPos_ == writePos_) {
         readPos_ = writePos_ = 0;
@@ -61,7 +63,7 @@ void Buffer::checkSize(size_t len)
 
 void Buffer::initUVBuffer(uv_buf_t *buff)
 {
-    checkSize(128);
+    checkSize(256);
     buff->base = buffer_.data() + writePos_;
     buff->len = writeableBytes();
 }

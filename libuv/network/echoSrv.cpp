@@ -8,6 +8,8 @@
 #include <signal.h>
 using namespace std;
 
+int cnt = 0;
+
 typedef struct {
     uv_write_t req;
     uv_buf_t buf;
@@ -31,6 +33,25 @@ void echo_write(uv_write_t *req, int status) {
     free_write_req(req);
 }
 
+void close_cb(uv_handle_t *handle)
+{
+    ++cnt;
+    if (cnt >= 1) {
+        uv_stop(handle->loop);
+    }
+    free(handle);
+}
+
+void shutdown_cb(uv_shutdown_t *req, int status)
+{
+    if (status != 0) {
+        cerr << "shutdown_cb error: " << uv_strerror(status) << endl;
+    }
+    uv_handle_t *handle = static_cast<uv_handle_t*>(req->data);
+    uv_close(handle, close_cb);
+    free(req);
+}
+
 void echo_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     if (nread > 0) {
         write_req_t *req = (write_req_t*) malloc(sizeof(write_req_t));
@@ -41,9 +62,10 @@ void echo_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     if (nread < 0) {
         if (nread != UV_EOF)
             fprintf(stderr, "Read error %s\n", uv_err_name(nread));
-        uv_close((uv_handle_t*) client, NULL);
+        uv_shutdown_t *req = static_cast<uv_shutdown_t*>(malloc(sizeof(uv_shutdown_t)));
+        req->data = static_cast<void*>(client);
+        uv_shutdown(req, client, shutdown_cb);
     }
-
     free(buf->base);
 }
 
@@ -59,7 +81,7 @@ void on_connection(uv_stream_t *server, int status)
         uv_read_start((uv_stream_t*)client, alloc_buffer, echo_read);
     }
     else {
-        uv_close((uv_handle_t*)client, NULL);
+        uv_close((uv_handle_t*)client, close_cb);
     }
 }
 

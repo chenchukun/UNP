@@ -8,17 +8,6 @@
 using namespace std;
 using namespace uv_cpp;
 
-void async()
-{
-    cout << "async" << endl;
-}
-
-void idle()
-{
-    cout << "idle" << endl;
-}
-
-
 int main()
 {
     EventLoop eventLoop;

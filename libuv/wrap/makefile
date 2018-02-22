@@ -13,7 +13,7 @@ OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
 $(OBJECTS): %.o:%.cpp
 	$(CC) $(CXXFLAGS) -c $< -o $@
 
-libuv_cpp.a: TcpServer.o TcpConnection.o Buffer.o EventLoop.o
+libuv_cpp.a: TcpServer.o TcpConnection.o Buffer.o EventLoop.o SockAddr.o
 	ar -rc $@ $^
 
 clean:

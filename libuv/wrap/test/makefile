@@ -3,7 +3,7 @@ LDFLAGS=-luv ../libuv_cpp.a -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: testLoop
+all: testLoop testServer
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -14,5 +14,9 @@ $(OBJECTS): %.o:%.cpp
 testLoop: testLoop.o
 	g++ $^ -o $@ $(FLAGS)
 
+testServer: testServer.o
+	g++ $^ -o $@ $(FLAGS)
+
+
 clean:
-	rm -rf *.o testLoop
+	rm -rf *.o testLoop testServer

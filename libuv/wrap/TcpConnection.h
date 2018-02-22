@@ -10,6 +10,7 @@
 #include <mutex>
 #include "common.h"
 #include "Buffer.h"
+#include "SockAddr.h"
 #include <uv.h>
 
 NAMESPACE_START
@@ -21,26 +22,20 @@ class TcpConnection
 public:
     friend class TcpServer;
 
-    TcpConnection(uv_loop_t *loop)
-        : loop_(loop),
-          remoteClose_(false),
-          sending_(false)
-    {
-        uv_tcp_init(loop_, &client_);
-    }
+    TcpConnection(TcpServer *server, uint64_t id);
 
     bool connected();
 
-    std::shared_ptr<sockaddr_in> getLocalAddr();
+    std::shared_ptr<SockAddr> getLocalAddr();
 
-    std::shared_ptr<sockaddr_in> getRemoteAddr();
+    std::shared_ptr<SockAddr> getRemoteAddr();
 
     void shutdown();
 
     void send(const std::string &str);
 
 private:
-    static void shutdownCallback(uv_handle_t* handle);
+    static void shutdownCallback(uv_shutdown_t* handle, int status);
 
     static void readCallback(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
 
@@ -48,22 +43,20 @@ private:
 
     static void writeComplete(uv_write_t* req, int status);
 
-    void sendImpl();
+    static void closeCallback(uv_handle_t* handle);
 
 private:
     uv_tcp_t client_;
 
-    uv_loop_t *loop_;
+    TcpServer *server_;
 
     bool remoteClose_;
 
-    bool sending_;
-
     std::mutex mutex_;
 
-    Buffer readBuff_, writeBuff_;
+    Buffer readBuff_;
 
-    uv_write_t writeReq;
+    uint64_t id_;
 };
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
