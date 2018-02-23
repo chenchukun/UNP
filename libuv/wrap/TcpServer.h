@@ -22,6 +22,8 @@ typedef void (*MessageCallback)(TcpConnectionPtr &connectionPtr, Buffer &buffer)
 
 typedef void (*ErrorCallback)(TcpConnectionPtr &connectionPtr, int errcode);
 
+typedef void (*WriteCompleteCallback)(TcpConnectionPtr &connectionPtr);
+
 class EventLoop;
 
 class TcpServer
@@ -50,8 +52,14 @@ public:
         errorCallback_ = errorCallback;
     }
 
+    void setWriteCompleteCallback(WriteCompleteCallback writeCompleteCallback) {
+        writeCompleteCallback_ = writeCompleteCallback;
+    }
+
 private:
     static void connectionCallback(uv_stream_t* server, int status);
+
+    static void closeCallback(uv_handle_t* handle);
 
 private:
 
@@ -70,6 +78,8 @@ private:
     MessageCallback messageCallback_;
 
     ErrorCallback errorCallback_;
+
+    WriteCompleteCallback writeCompleteCallback_;
 
     uint64_t autoId_;
 };

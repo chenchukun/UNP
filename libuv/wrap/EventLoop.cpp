@@ -10,7 +10,6 @@ NAMESPACE_START
 __thread EventLoop *currEventLoop = NULL;
 
 EventLoop::EventLoop()
-    : idle_(NULL)
 {
     threadId_ = std::this_thread::get_id();
     assert(currEventLoop == NULL);
@@ -22,10 +21,6 @@ EventLoop::EventLoop()
 
 EventLoop::~EventLoop()
 {
-    if (idle_ != NULL) {
-        uv_idle_stop(idle_);
-        free(idle_);
-    }
     uv_loop_close(loop_);
     free(loop_);
 }

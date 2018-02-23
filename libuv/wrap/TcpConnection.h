@@ -45,8 +45,9 @@ private:
 
     static void closeCallback(uv_handle_t* handle);
 
+
 private:
-    uv_tcp_t client_;
+    uv_tcp_t *client_;
 
     TcpServer *server_;
 

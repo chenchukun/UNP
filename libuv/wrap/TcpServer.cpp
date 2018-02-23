@@ -16,6 +16,7 @@ TcpServer::TcpServer(EventLoop *eventLoop)
       connectionCallback_(NULL),
       messageCallback_(NULL),
       errorCallback_(NULL),
+      writeCompleteCallback_(NULL),
       autoId_(0)
 {
 }
@@ -37,6 +38,11 @@ int TcpServer::start(const SockAddr &addr, int backlog) {
 
 // ========== static callback ============
 
+void TcpServer::closeCallback(uv_handle_t* handle)
+{
+    free(handle);
+}
+
 void TcpServer::connectionCallback(uv_stream_t *server, int status)
 {
     if (status != 0) {
@@ -46,15 +52,15 @@ void TcpServer::connectionCallback(uv_stream_t *server, int status)
     TcpServer *server_ = static_cast<TcpServer*>(server->data);
     for (int i=0; i<3; ++i) {
         TcpConnectionPtr connectionPtr = make_shared<TcpConnection>(server_, server_->autoId_++);
-        connectionPtr->client_.data = static_cast<void*>(connectionPtr.get());
-        int ret = uv_accept(server, reinterpret_cast<uv_stream_t*>(&connectionPtr->client_));
+        connectionPtr->client_->data = static_cast<void*>(connectionPtr.get());
+        int ret = uv_accept(server, reinterpret_cast<uv_stream_t*>(connectionPtr->client_));
         if (ret == 0) {
             {
                 // 在IO线程执行
  //               lock_guard<mutex> guard(server_->mutex_);
                 server_->connectionMap_[connectionPtr->id_] = connectionPtr;
             }
-            ret = uv_read_start(reinterpret_cast<uv_stream_t*>(&connectionPtr->client_),
+            ret = uv_read_start(reinterpret_cast<uv_stream_t*>(connectionPtr->client_),
                                 TcpConnection::allocCallback, TcpConnection::readCallback);
             if (ret != 0) {
                 connectionPtr->shutdown();
@@ -66,6 +72,7 @@ void TcpServer::connectionCallback(uv_stream_t *server, int status)
             }
         }
         else if (ret == UV_EAGAIN) {
+            uv_close((uv_handle_t*)connectionPtr->client_, TcpServer::closeCallback);
             break;
         }
         else {

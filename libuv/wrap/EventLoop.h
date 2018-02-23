@@ -79,16 +79,12 @@ public:
 private:
     static void asyncCallback(uv_async_t *async);
 
-    static void idleCallback(uv_idle_t *idle);
-
     static void timerCallback(uv_timer_t *timer);
 
     uv_timer_t* timerRunImpl(Timestamp time, uint64_t interval, TimerCallback cb);
 
 private:
     uv_loop_t *loop_;
-
-    uv_idle_t *idle_;
 
     std::thread::id threadId_;
 };

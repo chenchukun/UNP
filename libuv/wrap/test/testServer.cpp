@@ -8,7 +8,6 @@
 #include "../TcpServer.h"
 using namespace std;
 using namespace uv_cpp;
-
 int main()
 {
     EventLoop eventLoop;
@@ -29,7 +28,7 @@ int main()
     server.setMessageCallback([] (TcpConnectionPtr &conn, Buffer &buffer) {
         cout << "Recv: len = " << buffer.readableBytes() << endl;
         string str = buffer.readAll();
-//        conn->send(str);
+        conn->send(str);
     });
 
     server.start(6180);

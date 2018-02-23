@@ -15,7 +15,8 @@ TcpConnection::TcpConnection(TcpServer *server, uint64_t id)
       remoteClose_(false),
       id_(id)
 {
-    uv_tcp_init(server_->loop_, &client_);
+    client_ = static_cast<uv_tcp_t*>(malloc(sizeof(uv_tcp_t)));
+    uv_tcp_init(server_->loop_, client_);
 }
 
 bool TcpConnection::connected()
@@ -27,7 +28,7 @@ shared_ptr<SockAddr> TcpConnection::getLocalAddr()
 {
     std::shared_ptr<SockAddr> paddr = make_shared<SockAddr>();
     int len = paddr->getAddrLength();
-    int ret = uv_tcp_getsockname(&client_, paddr->getAddr(), &len);
+    int ret = uv_tcp_getsockname(client_, paddr->getAddr(), &len);
     if (ret != 0) {
         return NULL;
     }
@@ -38,7 +39,7 @@ shared_ptr<SockAddr> TcpConnection::getRemoteAddr()
 {
     std::shared_ptr<SockAddr> paddr = make_shared<SockAddr>();
     int len = paddr->getAddrLength();
-    int ret = uv_tcp_getpeername(&client_, paddr->getAddr(), &len);
+    int ret = uv_tcp_getpeername(client_, paddr->getAddr(), &len);
     if (ret != 0) {
         return NULL;
     }
@@ -49,7 +50,7 @@ void TcpConnection::shutdown()
 {
     uv_shutdown_t *req = static_cast<uv_shutdown_t*>(malloc(sizeof(uv_shutdown_t)));
     req->data = static_cast<void*>(this);
-    uv_shutdown(req, reinterpret_cast<uv_stream_t*>(&client_), TcpConnection::shutdownCallback);
+    uv_shutdown(req, reinterpret_cast<uv_stream_t*>(client_), TcpConnection::shutdownCallback);
 }
 
 // ========== static callback ============
@@ -63,13 +64,15 @@ void TcpConnection::closeCallback(uv_handle_t* handle)
 //        lock_guard<mutex> guard(server_->mutex_);
         server->connectionMap_.erase(conn->id_);
     }
+    free(handle);
 }
 
 void TcpConnection::shutdownCallback(uv_shutdown_t* handle, int status)
 {
     TcpConnection *conn = static_cast<TcpConnection*>(handle->data);
     TcpServer *server = conn->server_;
-    uv_close(reinterpret_cast<uv_handle_t*>(&conn->client_), TcpConnection::closeCallback);
+    uv_close(reinterpret_cast<uv_handle_t*>(conn->client_), TcpConnection::closeCallback);
+    free(handle);
 }
 
 void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
@@ -86,6 +89,7 @@ void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_bu
             server->connectionCallback_(it->second);
         }
         else if (nread > 0){
+            LOG_DEBUG("it->second->readBuff_.writePos_ = %ld, nread = %ld", it->second->readBuff_.writePos_, nread);
             it->second->readBuff_.setWritePosition(it->second->readBuff_.writePos_ + nread);
             if (server->messageCallback_ != NULL) {
                 server->messageCallback_(it->second, it->second->readBuff_);
@@ -126,7 +130,9 @@ void TcpConnection::writeComplete(uv_write_t* req, int status)
 {
     pair<string*, uv_buf_t*> *data = static_cast<pair<string*, uv_buf_t*>*>(req->data);
     delete data->first;
-    delete data->second;
+    free(data->second);
+    delete data;
+    free(req);
 }
 
 void TcpConnection::send(const string &str)
@@ -138,7 +144,7 @@ void TcpConnection::send(const string &str)
     buf->base = const_cast<char*>(data->data());
     buf->len = data->size();
     handle->data = static_cast<void*>(new pair<string*, uv_buf_t*>(data, buf));
-    uv_write(handle, reinterpret_cast<uv_stream_t*>(&client_), buf, 1, TcpConnection::writeComplete);
+    uv_write(handle, reinterpret_cast<uv_stream_t*>(client_), buf, 1, TcpConnection::writeComplete);
 }
 
 NAMESPACE_END
