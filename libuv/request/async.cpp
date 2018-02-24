@@ -7,36 +7,67 @@
 #include <thread>
 using namespace std;
 
-void async_cb(uv_async_t *handle)
+void close_cb(uv_handle_t *handle)
 {
-    cout << "call async_cb" << endl;
-    cout << "async_cb thread_id = " << this_thread::get_id() << endl;
+    free(handle);
 }
 
-void send_async(uv_async_t *async)
+void async_cb(uv_async_t *handle)
 {
-    sleep(1);
-    cout << "send_async thread_id = " << this_thread::get_id() << endl;
-    // 唤醒事件循环并执行回调
-    // 若在回调被调用前多次执行send将被忽略,而回调只调用一次
-    uv_async_send(async);
-    sleep(1);
-    uv_async_send(async);
+    cout << "async_cb thread_id = " << this_thread::get_id() << endl;
+    uv_close(reinterpret_cast<uv_handle_t*>(handle), close_cb);
+}
+
+void send_async(uv_loop_t *loop)
+{
+    for (int i=0; i<2000000; ++i) {
+        // async可以用于唤醒事件循环,并在事件循环所在线程执行回调
+        uv_async_t *async = static_cast<uv_async_t*>(malloc(sizeof(uv_async_t)));
+        // 不需要start
+        int ret = uv_async_init(loop, async, async_cb);
+        if (ret != 0) {
+            cout << "init error: " << ret  << endl;
+        }
+
+        // 唤醒事件循环并执行回调
+        // 若在回调被调用前多次执行send将被忽略,而回调只调用一次
+        ret =  uv_async_send(async);
+        cout << i << endl;
+        if (ret != 0) {
+            cout << "send error: " << ret  << endl;
+        }
+        usleep(10000);
+    }
+
+}
+
+void timer_cb(uv_timer_t *handle)
+{
+    cout << "timer_cb" << endl;
 }
 
 int main()
 {
     uv_loop_t *loop = uv_default_loop();
 
-    // async可以用于唤醒事件循环,并在事件循环所在线程执行回调
-    uv_async_t async;
-    // 不需要start
-    uv_async_init(loop, &async, async_cb);
+    thread t(send_async, loop);
+    t.detach();
 
-    thread t(send_async, &async);
     cout << "main thread_id = " << this_thread::get_id() << endl;
-    uv_run(loop, UV_RUN_DEFAULT);
+
+    uv_timer_t timer;
+    uv_timer_init(loop, &timer);
+    uv_timer_start(&timer, timer_cb, 10, 10);
+
+    while (true) {
+        int ret = uv_run(loop, UV_RUN_DEFAULT);
+        if (ret != 0) {
+            cout << "uv_run error: " << ret << endl;
+        }
+    }
+
     uv_loop_close(loop);
+
     return 0;
 }
 

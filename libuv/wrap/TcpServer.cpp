@@ -52,7 +52,8 @@ void TcpServer::connectionCallback(uv_stream_t *server, int status)
     TcpServer *server_ = static_cast<TcpServer*>(server->data);
     for (int i=0; i<3; ++i) {
         TcpConnectionPtr connectionPtr = make_shared<TcpConnection>(server_, server_->autoId_++);
-        connectionPtr->client_->data = static_cast<void*>(connectionPtr.get());
+        weak_ptr<TcpConnection> *weak = new weak_ptr<TcpConnection>(connectionPtr);
+        connectionPtr->client_->data = static_cast<void*>(weak);
         int ret = uv_accept(server, reinterpret_cast<uv_stream_t*>(connectionPtr->client_));
         if (ret == 0) {
             {

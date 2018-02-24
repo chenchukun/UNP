@@ -4,6 +4,8 @@
 
 #include "EventLoop.h"
 #include <assert.h>
+#include <unistd.h>
+using namespace std;
 
 NAMESPACE_START
 
@@ -35,13 +37,19 @@ void EventLoop::stop()
 
 void EventLoop::runInLoopThread(AsyncCallback cb)
 {
-    uv_async_t *async = static_cast<uv_async_t*>(malloc(sizeof(uv_async_t)));
-    async->data = NULL;
-    if (cb != NULL) {
-        async->data = static_cast<void*>(new AsyncCallback(cb));
+    if (getThreadId() == this_thread::get_id()) {
+        cb();
     }
-    uv_async_init(loop_, async, EventLoop::asyncCallback);
-    uv_async_send(async);
+    else {
+        uv_async_t *async = static_cast<uv_async_t*>(malloc(sizeof(uv_async_t)));
+        async->data = NULL;
+        if (cb != NULL) {
+            async->data = static_cast<void*>(new AsyncCallback(cb));
+        }
+        lock_guard<mutex> guard(mutex_);
+        uv_async_init(loop_, async, EventLoop::asyncCallback);
+        uv_async_send(async);
+    }
 }
 
 void EventLoop::wakeup()
@@ -104,7 +112,7 @@ void EventLoop::asyncCallback(uv_async_t *async)
         (*cb)();
         delete cb;
     }
-    free(async);
+    uv_close((uv_handle_t*)async, EventLoop::closeCallback);
 }
 
 void EventLoop::timerCallback(uv_timer_t *timer)
@@ -119,6 +127,11 @@ void EventLoop::timerCallback(uv_timer_t *timer)
         delete static_cast<TimerCallback*>(timer->data);
         free(timer);
     }
+}
+
+void EventLoop::closeCallback(uv_handle_t* handle)
+{
+    free(handle);
 }
 
 NAMESPACE_END

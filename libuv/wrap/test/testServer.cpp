@@ -28,7 +28,14 @@ int main()
     server.setMessageCallback([] (TcpConnectionPtr &conn, Buffer &buffer) {
         cout << "Recv: len = " << buffer.readableBytes() << endl;
         string str = buffer.readAll();
-        conn->send(str);
+        thread t([conn, str] {
+            usleep(100000);
+            if (conn->connected()) {
+                conn->send(str);
+            }
+        });
+        t.detach();
+
     });
 
     server.start(6180);

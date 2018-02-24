@@ -11,16 +11,19 @@
 #include "common.h"
 #include "Buffer.h"
 #include "SockAddr.h"
+#include "EventLoop.h"
 #include <uv.h>
 
 NAMESPACE_START
 
 class TcpServer;
 
-class TcpConnection
+class TcpConnection : public std::enable_shared_from_this<TcpConnection>
 {
 public:
     friend class TcpServer;
+
+    typedef enum {CONNECTED, FIN_WAIT, CLOSE_WAIT, CLOSED}CONNECTION_STATUS;
 
     TcpConnection(TcpServer *server, uint64_t id);
 
@@ -32,7 +35,15 @@ public:
 
     void shutdown();
 
+    void close();
+
     void send(const std::string &str);
+
+    CONNECTION_STATUS getStatus() const {
+        return status_;
+    }
+
+    EventLoop* getEventLoop();
 
 private:
     static void shutdownCallback(uv_shutdown_t* handle, int status);
@@ -45,13 +56,23 @@ private:
 
     static void closeCallback(uv_handle_t* handle);
 
+    typedef enum {BUF_TYPE_STRING} BUF_TYPE;
+
+    struct WriteContext {
+        uv_buf_t *buf;
+        BUF_TYPE buffType;
+        union {
+            std::string *str;
+        };
+        std::shared_ptr<TcpConnection> conn;
+    };
 
 private:
     uv_tcp_t *client_;
 
     TcpServer *server_;
 
-    bool remoteClose_;
+    CONNECTION_STATUS status_;
 
     std::mutex mutex_;
 

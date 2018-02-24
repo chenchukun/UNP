@@ -9,6 +9,7 @@
 #include <uv.h>
 #include <functional>
 #include <thread>
+#include <mutex>
 #include "common.h"
 #include "Timestamp.h"
 
@@ -35,7 +36,9 @@ public:
      * @param mode
      */
     void run(uv_run_mode mode = UV_RUN_DEFAULT) {
-        uv_run(loop_, mode);
+        while (true) {
+            uv_run(loop_, mode);
+        }
     }
 
     /**
@@ -68,6 +71,10 @@ public:
      */
     void wakeup();
 
+    std::thread::id getThreadId() const {
+        return threadId_;
+    }
+
     uv_timer_t* runAt(Timestamp time, TimerCallback cb);
 
     uv_timer_t* runAfter(uint64_t delay, TimerCallback cb);
@@ -81,10 +88,14 @@ private:
 
     static void timerCallback(uv_timer_t *timer);
 
+    static void closeCallback(uv_handle_t* handle);
+
     uv_timer_t* timerRunImpl(Timestamp time, uint64_t interval, TimerCallback cb);
 
 private:
     uv_loop_t *loop_;
+
+    std::mutex mutex_;
 
     std::thread::id threadId_;
 };
