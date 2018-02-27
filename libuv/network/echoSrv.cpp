@@ -8,8 +8,6 @@
 #include <signal.h>
 using namespace std;
 
-int cnt = 0;
-
 typedef struct {
     uv_write_t req;
     uv_buf_t buf;
@@ -35,10 +33,6 @@ void echo_write(uv_write_t *req, int status) {
 
 void close_cb(uv_handle_t *handle)
 {
-    ++cnt;
-    if (cnt >= 1) {
-        uv_stop(handle->loop);
-    }
     free(handle);
 }
 

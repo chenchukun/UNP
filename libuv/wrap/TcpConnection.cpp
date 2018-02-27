@@ -102,7 +102,6 @@ void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_bu
         server->connectionCallback_(conn);
     }
     else if (nread > 0){
-        LOG_DEBUG("conn->readBuff_.writePos_ = %ld, nread = %ld", conn->readBuff_.writePos_, nread);
         conn->readBuff_.setWritePosition(conn->readBuff_.writePos_ + nread);
         if (server->messageCallback_ != NULL) {
             server->messageCallback_(conn, conn->readBuff_);
