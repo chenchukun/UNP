@@ -31,7 +31,7 @@ public:
 
     std::shared_ptr<SockAddr> getLocalAddr();
 
-    std::shared_ptr<SockAddr> getRemoteAddr();
+    std::shared_ptr<SockAddr> getPeerAddr();
 
     void shutdown();
 

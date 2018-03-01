@@ -81,10 +81,12 @@ public:
         append(reinterpret_cast<const char*>(&nint32), sizeof(int32));
     }
 
+#ifndef _WIN32
     void appendInt64(int64_t int64) {
         int64_t nint64 = htonll(int64);
         append(reinterpret_cast<const char*>(&nint64), sizeof(int64));
     }
+#endif
 
     int8_t readInt8() {
         assert(readableBytes() >= sizeof(int8_t));
@@ -97,22 +99,24 @@ public:
         assert(readableBytes() >= sizeof(int16_t));
         int16_t *p = reinterpret_cast<int16_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int16_t));
-        return *p;
+        return ntohs(*p);
     }
 
     int32_t readInt32() {
         assert(readableBytes() >= sizeof(int32_t));
         int32_t *p = reinterpret_cast<int32_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int32_t));
-        return *p;
+        return ntohl(*p);
     }
 
+#ifndef _WIN32
     int64_t readInt64() {
         assert(readableBytes() >= sizeof(int64_t));
         int64_t *p = reinterpret_cast<int64_t*>(readPos_);
         setReadPosition(readPos_ + sizeof(int64_t));
-        return *p;
+        return ntohll(*p);
     }
+#endif
 
     std::string readString(size_t len) {
         assert(readableBytes() >= len);

@@ -2,75 +2,97 @@
 #define SOCKADDR_H
 #include <string>
 #include <cstring>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include "common.h"
+#include "uv.h"
 
 NAMESPACE_START
 
 class SockAddr
 {
-	friend bool operator==(const SockAddr &larg, const SockAddr &rarg);
-	friend bool operator!=(const SockAddr &larg, const SockAddr &rarg);
 public:
-	SockAddr();
 
-	SockAddr(const SockAddr &sockAddr);
+	SockAddr() {
+		memset(&addr_, 0, sizeof(addr_));
+	}
 
-	SockAddr(const struct sockaddr*, socklen_t socklen);
+	SockAddr(int port)
+			: SockAddr("0.0.0.0", port)
+	{
+	}
 
-	SockAddr(uint16_t port, const std::string &ip="0.0.0.0", uint8_t family = AF_INET);
+	SockAddr(const char *ip, int port, bool ipv6 = false) {
+		if (ipv6) {
+			uv_ip6_addr(ip, port, (sockaddr_in6*)&addr_);
+		}
+		else {
+			uv_ip4_addr(ip, port, (sockaddr_in*)&addr_);
+		}
+	}
 
-	SockAddr& operator=(const SockAddr &sockAddr);
+	std::string getIp() const {
+		char buff[64];
+		if (addr_.sa_family == AF_INET) {
+			uv_ip4_name((sockaddr_in*)&addr_, buff, sizeof(buff));
+		}
+		else {
+			uv_ip6_name((sockaddr_in6*)&addr_, buff, sizeof(buff));
+		}
+		return std::string(buff);
+	}
 
-	~SockAddr(){}
+	std::string getIpPort() const {
+		char buff[64];
+		u_short port;
+		if (addr_.sa_family == AF_INET) {
+			sockaddr_in *addr = (sockaddr_in*)&addr_;
+			uv_ip4_name(addr, buff, sizeof(buff));
 
-	const struct sockaddr* getAddr() const;
+			port = ntohs(addr->sin_port);
+		}
+		else {
+			sockaddr_in6 *addr = (sockaddr_in6*)&addr_;
+			uv_ip6_name(addr, buff, sizeof(buff));
+			port = ntohs(addr->sin6_port);
+		}
+		return std::string(buff) + std::to_string(port);
+	}
 
-	struct sockaddr* getAddr();
+	u_short getPort() const {
+		u_short port;
+		if (addr_.sa_family == AF_INET) {
+			sockaddr_in *addr = (sockaddr_in*)&addr_;
+			port = ntohs(addr->sin_port);
+		}
+		else {
+			sockaddr_in6 *addr = (sockaddr_in6*)&addr_;
+			port = ntohs(addr->sin6_port);
+		}
+		return port;
+	}
 
-	std::string getIp() const;
+	const struct sockaddr* getAddr() const {
+		return &addr_;
+	}
 
-	int getPort() const;
+	struct sockaddr* getAddr() {
+		return &addr_;
+	}
 
-	int getFamily() const;
-
-	socklen_t getAddrLength() const;
-
-	int set(const struct sockaddr* sockAddr, socklen_t socklen);
-
-	int set(const std::string &ip, uint16_t port, uint8_t family = AF_INET);
-
-	int setIp(const std::string &ip);
-
-	int setPort(uint16_t port);
-
-	int setFamily(uint8_t family);
-
-	int setAny();
-
-	std::string format() const;
+	int getAddrLength() const
+	{
+		if (addr_.sa_family == AF_INET) {
+			return sizeof(struct sockaddr_in);
+		}
+		else if (addr_.sa_family == AF_INET6) {
+			return sizeof(struct sockaddr_in6);
+		}
+		return sizeof(sockaddr);
+	}
 
 private:
-	struct sockaddr_storage sockaddr;
-
-	void reset();
-
-	int setSockaddrFamily(uint8_t family);
-
-	int setSockaddrAddr(uint8_t family, const std::string &ip);
-
-	int setSockaddrPort(uint8_t family, uint16_t port);
+	sockaddr addr_;
 };
 
-inline bool operator==(const SockAddr &larg, const SockAddr &rarg) {
-	return bcmp(&larg.sockaddr, &rarg.sockaddr, sizeof(rarg.sockaddr))==0;
-}
-
-inline bool operator!=(const SockAddr &larg, const SockAddr &rarg) {
-	return !(larg==rarg);
-}
 
 NAMESPACE_END
 

@@ -36,7 +36,7 @@ shared_ptr<SockAddr> TcpConnection::getLocalAddr()
     return paddr;
 }
 
-shared_ptr<SockAddr> TcpConnection::getRemoteAddr()
+shared_ptr<SockAddr> TcpConnection::getPeerAddr()
 {
     std::shared_ptr<SockAddr> paddr = make_shared<SockAddr>();
     int len = paddr->getAddrLength();

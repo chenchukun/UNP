@@ -1,7 +1,5 @@
 #ifndef TIMESTAMP_H
 #define TIMESTAMP_H
-#include <ctime>
-#include <sys/time.h>
 #include <cstdint>
 #include <assert.h>
 #include "common.h"

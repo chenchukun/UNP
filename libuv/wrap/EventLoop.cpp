@@ -4,7 +4,9 @@
 
 #include "EventLoop.h"
 #include <assert.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 using namespace std;
 
 NAMESPACE_START
@@ -50,11 +52,6 @@ void EventLoop::runInLoopThread(AsyncCallback cb)
         uv_async_init(loop_, async, EventLoop::asyncCallback);
         uv_async_send(async);
     }
-}
-
-void EventLoop::wakeup()
-{
-    runInLoopThread(NULL);
 }
 
 uv_timer_t* EventLoop::timerRunImpl(Timestamp time, uint64_t interval, TimerCallback cb)

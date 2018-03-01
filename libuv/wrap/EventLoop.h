@@ -66,11 +66,6 @@ public:
      */
     static EventLoop* getCurrThreadEventLoop();
 
-    /**
-     * 唤醒事件循环
-     */
-    void wakeup();
-
     std::thread::id getThreadId() const {
         return threadId_;
     }
