@@ -29,7 +29,7 @@ int main()
         cout << "Recv: len = " << buffer.readableBytes() << endl;
         string str = buffer.readAll();
         thread t([conn, str] {
-            usleep(100000);
+            usleep(1000000);
             if (conn->connected()) {
                 conn->send(str);
             }

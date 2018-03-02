@@ -54,12 +54,16 @@ void TcpConnection::close()
 
 void TcpConnection::shutdown()
 {
-    uv_shutdown_t *req = static_cast<uv_shutdown_t*>(malloc(sizeof(uv_shutdown_t)));
-    req->data = static_cast<void*>(this);
-    uv_tcp_t *client = client_;
-    server_->eventLoop_->runInLoopThread([client, req] {
-        uv_shutdown(req, reinterpret_cast<uv_stream_t*>(client), TcpConnection::shutdownCallback);
-    });
+    assert(status_ != CLOSED && status_ != FIN_WAIT);
+
+    if (status_ == CONNECTED) {
+        status_ = FIN_WAIT;
+        shutdownWrite();
+    }
+    else {
+        status_ = CLOSED;
+        uv_close(reinterpret_cast<uv_handle_t*>(client_), TcpConnection::closeCallback);
+    }
 }
 
 EventLoop* TcpConnection::getEventLoop()
@@ -86,8 +90,6 @@ void TcpConnection::closeCallback(uv_handle_t* handle)
 
 void TcpConnection::shutdownCallback(uv_shutdown_t* handle, int status)
 {
-    TcpConnection *conn = static_cast<TcpConnection*>(handle->data);
-    uv_close(reinterpret_cast<uv_handle_t*>(conn->client_), TcpConnection::closeCallback);
     free(handle);
 }
 
@@ -98,8 +100,16 @@ void TcpConnection::readCallback(uv_stream_t* stream, ssize_t nread, const uv_bu
     TcpServer *server = conn->server_;
     // 对端关闭连接
     if (nread == UV_EOF) {
-        conn->status_ = CLOSE_WAIT;
-        server->connectionCallback_(conn);
+        assert(conn->status_ != CLOSED && conn->status_ != CLOSE_WAIT);
+        if (conn->status_ == CONNECTED) {
+            conn->status_ = CLOSE_WAIT;
+            server->connectionCallback_(conn);
+        }
+        else {
+            conn->status_ = CLOSED;
+            server->connectionCallback_(conn);
+            uv_close(reinterpret_cast<uv_handle_t*>(conn->client_), TcpConnection::closeCallback);
+        }
     }
     else if (nread > 0){
         conn->readBuff_.setWritePosition(conn->readBuff_.writePos_ + nread);
@@ -159,6 +169,15 @@ void TcpConnection::send(const string &str)
     handle->data = static_cast<void*>(context);
     server_->eventLoop_->runInLoopThread([client, buf, handle] {
         uv_write(handle, reinterpret_cast<uv_stream_t*>(client), buf, 1, TcpConnection::writeComplete);
+    });
+}
+
+void TcpConnection::shutdownWrite()
+{
+    uv_shutdown_t *req = static_cast<uv_shutdown_t*>(malloc(sizeof(uv_shutdown_t)));
+    uv_tcp_t *client = client_;
+    server_->eventLoop_->runInLoopThread([client, req] {
+        uv_shutdown(req, reinterpret_cast<uv_stream_t*>(client), TcpConnection::shutdownCallback);
     });
 }
 

@@ -67,6 +67,8 @@ private:
         std::shared_ptr<TcpConnection> conn;
     };
 
+    void shutdownWrite();
+
 private:
     uv_tcp_t *client_;
 
