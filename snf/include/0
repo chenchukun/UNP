@@ -1,0 +1,41 @@
+#include "TcpClient.h"
+
+namespace snf
+{
+
+TcpClient::TcpClient(Reactor *reactor, const SockAddr &addr)
+	: reactor(reactor),
+	  sockAddr(addr),
+	  connectionCallback(NULL),
+	  messageCallback(NULL),
+	  writeCompleteCallback(NULL),
+	  errorCallback(NULL)
+{
+}
+
+void TcpClient::setConnectionCallback(const ConnectionCallback &cb)
+{
+	connectionCallback = cb;
+}
+
+void TcpClient::setMessageCallback(const MessageCallback &cb)
+{
+	messageCallback = cb;
+}
+
+void TcpClient::setWriteCompleteCallback(const WriteCompleteCallback &cb)
+{
+	writeCompleteCallback = cb;
+}
+
+void TcpClient::setErrorCallback(const ErrorCallback &cb)
+{
+	errorCallback = cb;
+}
+
+void connect() 
+{
+	sockConnect.connect(sockStream, sockAddr);
+}
+
+}
