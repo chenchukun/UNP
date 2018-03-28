@@ -7,6 +7,8 @@
 #include <muduo/net/http/HttpRequest.h>
 #include <muduo/net/http/HttpResponse.h>
 #include <iostream>
+#include <iterator>
+#include <fstream>
 #include <string>
 #include <map>
 using namespace muduo::net;
@@ -32,7 +34,11 @@ int main()
         cout << "receiveTime = " << request.receiveTime().toString() << endl;
         response->setStatusCode(HttpResponse::k200Ok);
         response->addHeader("key", "value");
-        response->setBody("hello world");
+        ifstream in("index.html");
+        istreambuf_iterator<char> begin(in);
+        istreambuf_iterator<char> end;
+        string html = string(begin, end);
+        response->setBody(html);
     });
     server.setThreadNum(4);
     server.start();
