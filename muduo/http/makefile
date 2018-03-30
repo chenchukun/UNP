@@ -3,7 +3,7 @@ LDFLAGS=-lmuduo_net -lmuduo_base -lpthread -lmuduo_http
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: server
+all: server curl
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -14,5 +14,8 @@ $(OBJECTS): %.o:%.cpp
 server: server.o
 	g++ $^ -o $@ $(FLAGS)
 
+curl: curl.o
+	g++ $^ -o $@ $(CXXFLAGS) -lcurl
+
 clean:
-	rm -rf *.o server
+	rm -rf *.o server curl
