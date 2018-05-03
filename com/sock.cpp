@@ -102,7 +102,7 @@ int sock_bind_wild(int sockfd, int family)
             addr.sin_family = AF_INET;
             addr.sin_addr.s_addr = INADDR_ANY;
             addr.sin_port = 0;
-            if (bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
+            if (::bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
                 return -1;
             }
             len = sizeof(addr);
@@ -117,7 +117,7 @@ int sock_bind_wild(int sockfd, int family)
             addr.sin6_family = AF_INET6;
             addr.sin6_addr = IN6ADDR_ANY_INIT;
             addr.sin6_port = 0;
-            if (bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+            if (::bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
                 return -1;
             }
             len = sizeof(addr);
@@ -150,7 +150,7 @@ int sock_bind(int sockfd, int family, uint16_t port, const char *ip)
                 }
             }
             addr.sin_port = htons(port);
-            if (bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
+            if (::bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
                 return -1;
             }
             break;
@@ -169,7 +169,7 @@ int sock_bind(int sockfd, int family, uint16_t port, const char *ip)
                 }
             }
             addr.sin6_port = htons(port);
-            if (bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
+            if (::bind(sockfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))<0) {
                 return -1;
             }
             break;
@@ -490,7 +490,7 @@ int tcp_listen(const char *hostname, const char *service, int backlog, socklen_t
         if (listenfd >= 0) {
             int on = 1;
             setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-            if (bind(listenfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
+            if (::bind(listenfd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
                 if (listen(listenfd, backlog) == 0) {
                     break;
                 }
