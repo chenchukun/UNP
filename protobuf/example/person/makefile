@@ -1,6 +1,6 @@
 TARGET=person
 
-CXXFLAGS=-std=c++11
+CXXFLAGS=-std=c++11 
 LDFLAGS=-lprotobuf -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)

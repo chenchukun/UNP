@@ -16,7 +16,7 @@ void onConnection(const TcpConnectionPtr &conn)
 
 void onMessage(const TcpConnectionPtr &conn, Buffer *buf, Timestamp time)
 {
-    cout << "onMessage" << endl;
+//    cout << "onMessage" << endl;
     conn->send(buf);
 }
 
@@ -32,7 +32,7 @@ int main()
     TcpServer server(&loop, listenAddr, "EchoServer");
     server.setConnectionCallback(onConnection);
     server.setMessageCallback(onMessage);
-    server.setWriteCompleteCallback(onWriteComplete);
+ //   server.setWriteCompleteCallback(onWriteComplete);
     server.start();
     loop.loop();
     return 0;

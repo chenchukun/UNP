@@ -172,6 +172,8 @@ void echoCli(const char *ip, uint16_t port)
     ssize_t n;
     while (getline(cin, msg)) {
         msg += "\n";
+        int32_t len = htonl(msg.size());
+        writen(connfd, &len, sizeof(len));
         n = writen(connfd, msg.c_str(), msg.size());
         if (n != msg.size()) {
             cerr << "发送数据错误:" << strerror(errno) << "(" << errno << ")" << endl;

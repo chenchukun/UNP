@@ -1,4 +1,4 @@
-CXXFLAGS=-std=c++11 -g
+CXXFLAGS=-std=c++11 -O2
 LDFLAGS=-lmuduo_net -lmuduo_base -lpthread
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
