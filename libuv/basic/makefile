@@ -3,7 +3,7 @@ LDFLAGS=-luv
 
 FLAGS= $(CXXFLAGS) $(LDFLAGS)
 
-all: idle work dns thread process
+all: idle work dns thread process ThreadPool
 
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(patsubst %.cpp, %.o, $(SOURCES))
@@ -26,5 +26,8 @@ thread: thread.o
 process: process.o
 	g++ $^ -o $@ $(FLAGS)
 
+ThreadPool: ThreadPool.o
+	g++ $^ -o $@ $(FLAGS)
+
 clean:
-	rm -rf *.o idle work dns thread process
+	rm -rf *.o idle work dns thread process ThreadPool
